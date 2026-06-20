@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自習サポートアプリ | トップ</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="メインナビゲーション">
+      <a class="brand" href="index.html">Study Room Share</a>
+      <div class="nav-links">
+        <a class="active" href="index.html">トップ</a>
+        <a href="features.html">機能</a>
+        <a href="use-cases.html">活用例</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">学校の自習をもっと使いやすくするアプリ</p>
+        <h1>友達の勉強場所と空き教室が分かる、自習サポートアプリ</h1>
+        <p class="lead">
+          テスト期間中に、どの教室が使えるのか、誰がどこで勉強しているのかを分かりやすく共有します。
+          生徒が自習場所を選びやすく、先生が教室利用を管理しやすくなることを目指します。
+        </p>
+        <div class="actions">
+          <a class="button primary" href="features.html">機能を見る</a>
+          <a class="button secondary" href="use-cases.html">使い方を見る</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <p class="eyebrow">Purpose</p>
+        <h2>このアプリを作る理由</h2>
+      </div>
+      <div class="two-column">
+        <article class="panel">
+          <h3>生徒の迷いを減らす</h3>
+          <p>
+            どの教室が空いているのか、友達がどこにいるのかが分かると、自習を始めるまでの時間を短くできます。
+            「自分も勉強しよう」と思えるきっかけにもなります。
+          </p>
+        </article>
+        <article class="panel">
+          <h3>先生の確認作業を減らす</h3>
+          <p>
+            生徒の希望人数や利用予定を一覧で確認できるため、教室を開ける判断がしやすくなります。
+            紙や口頭で集める手間も減らせます。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section highlight">
+      <div>
+        <p class="eyebrow">Goal</p>
+        <h2>自習しやすい環境をつくる</h2>
+      </div>
+      <p>
+        このアプリは、空いている教室や友達のいる場所を分かりやすく表示します。
+        生徒が自分に合った自習場所を選びやすくするためのものです。
+        先生にとっても、利用人数や希望時間を確認しやすくなり、教室の準備や管理を進めやすくなります。
+      </p>
+    </section>
+
+    <section class="section board-section" aria-labelledby="board-title">
+      <div class="section-heading">
+        <p class="eyebrow">Board</p>
+        <h2 id="board-title">掲示板</h2>
+        <p class="board-intro">自習場所の相談や、空き教室の情報共有に使えます。</p>
+      </div>
+
+      <div class="board-layout">
+        <form class="board-form" id="post-form">
+          <label for="post-name">名前</label>
+          <input id="post-name" name="name" type="text" maxlength="40" autocomplete="name" required>
+
+          <label for="post-body">投稿内容</label>
+          <textarea id="post-body" name="body" rows="5" maxlength="1000" required></textarea>
+
+          <button class="button primary board-submit" id="post-submit" type="submit">投稿する</button>
+          <p class="board-message" id="post-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="post-list" id="post-list" aria-live="polite">
+          <p class="empty-posts">投稿を読み込んでいます。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Study Room Share | 自習場所共有アプリ</p>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
+
+    const boardClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const postForm = document.getElementById("post-form");
+    const postName = document.getElementById("post-name");
+    const postBody = document.getElementById("post-body");
+    const postSubmit = document.getElementById("post-submit");
+    const postMessage = document.getElementById("post-message");
+    const postList = document.getElementById("post-list");
+
+    function setMessage(text, type) {
+      postMessage.textContent = text;
+      postMessage.dataset.type = type || "";
+    }
+
+    function renderPosts(posts) {
+      postList.innerHTML = "";
+
+      if (!posts.length) {
+        const empty = document.createElement("p");
+        empty.className = "empty-posts";
+        empty.textContent = "まだ投稿はありません。最初の投稿を書いてみましょう。";
+        postList.appendChild(empty);
+        return;
+      }
+
+      posts.forEach((post) => {
+        const item = document.createElement("article");
+        item.className = "post-item";
+
+        const header = document.createElement("div");
+        header.className = "post-header";
+
+        const name = document.createElement("strong");
+        name.textContent = post.name;
+
+        const time = document.createElement("time");
+        time.dateTime = post.created_at;
+        time.textContent = new Date(post.created_at).toLocaleString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        const body = document.createElement("p");
+        body.textContent = post.body;
+
+        header.append(name, time);
+        item.append(header, body);
+        postList.appendChild(item);
+      });
+    }
+
+    async function loadPosts() {
+      const { data, error } = await boardClient
+        .from("posts")
+        .select("id, name, body, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) {
+        setMessage("投稿を読み込めませんでした。Supabaseの設定を確認してください。", "error");
+        renderPosts([]);
+        return;
+      }
+
+      renderPosts(data || []);
+    }
+
+    postForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const name = postName.value.trim();
+      const body = postBody.value.trim();
+
+      if (!name || !body) {
+        setMessage("名前と投稿内容を入力してください。", "error");
+        return;
+      }
+
+      postSubmit.disabled = true;
+      postSubmit.textContent = "投稿中...";
+      setMessage("", "");
+
+      const { error } = await boardClient
+        .from("posts")
+        .insert({ name, body });
+
+      postSubmit.disabled = false;
+      postSubmit.textContent = "投稿する";
+
+      if (error) {
+        setMessage("投稿できませんでした。少し時間をおいてもう一度お試しください。", "error");
+        return;
+      }
+
+      postForm.reset();
+      setMessage("投稿しました。", "success");
+      await loadPosts();
+    });
+
+    loadPosts();
+  </script>
+</body>
+</html>

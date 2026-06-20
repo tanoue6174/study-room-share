@@ -83,16 +83,16 @@
           <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
         </div>
         <form class="auth-form" id="auth-form">
-          <label for="auth-email">メールアドレス</label>
-          <input id="auth-email" name="email" type="email" autocomplete="email" required>
+          <label class="auth-field" for="auth-email">メールアドレス</label>
+          <input class="auth-field" id="auth-email" name="email" type="text" autocomplete="username" placeholder="メールアドレス" required>
 
-          <label for="auth-password">パスワード</label>
-          <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
+          <label class="auth-field" for="auth-password">パスワード</label>
+          <input class="auth-field" id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password">
 
           <div class="auth-actions">
-            <button class="button primary" id="signup-button" type="button">新規登録</button>
-            <button class="button primary" id="signin-button" type="submit">ログイン</button>
-            <button class="button secondary auth-logout" id="signout-button" type="button" hidden>ログアウト</button>
+            <button class="button auth-button-strong" id="signup-button" type="button">新規登録</button>
+            <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
+            <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
@@ -124,6 +124,9 @@
   <script>
     const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
+    const PRESENTATION_LOGIN_NAME = "たのうえ";
+    const PRESENTATION_LOGIN_EMAIL = "demo-user@example.invalid";
+    const PRESENTATION_LOGIN_PASSWORD = "DEMO_PASSWORD_REDACTED";
 
     const boardClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     const authForm = document.getElementById("auth-form");
@@ -131,6 +134,7 @@
     const authPassword = document.getElementById("auth-password");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
+    const authFields = document.querySelectorAll(".auth-field");
     const signupButton = document.getElementById("signup-button");
     const signinButton = document.getElementById("signin-button");
     const signoutButton = document.getElementById("signout-button");
@@ -141,6 +145,7 @@
     const postMessage = document.getElementById("post-message");
     const postList = document.getElementById("post-list");
     let currentUser = null;
+    let isPresentationMode = false;
 
     function setMessage(text, type) {
       postMessage.textContent = text;
@@ -156,6 +161,40 @@
       signupButton.disabled = isLoading;
       signinButton.disabled = isLoading;
       signoutButton.disabled = isLoading;
+    }
+
+    function isPresentationLoginName(value) {
+      return value.trim() === PRESENTATION_LOGIN_NAME;
+    }
+
+    function resolveLoginInput() {
+      const emailInput = authEmail.value.trim();
+      const isPresentationLogin = isPresentationLoginName(emailInput);
+
+      return {
+        email: isPresentationLogin ? PRESENTATION_LOGIN_EMAIL : emailInput,
+        password: isPresentationLogin ? PRESENTATION_LOGIN_PASSWORD : authPassword.value,
+        isPresentationLogin
+      };
+    }
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    function validateAuthInput(allowPresentationLogin) {
+      const emailInput = authEmail.value.trim();
+
+      if (allowPresentationLogin && isPresentationLoginName(emailInput)) {
+        authEmail.setCustomValidity("");
+        authPassword.setCustomValidity("");
+        return true;
+      }
+
+      authEmail.setCustomValidity(isValidEmail(emailInput) ? "" : "メールアドレスを入力してください。");
+      authPassword.setCustomValidity(authPassword.value ? "" : "パスワードを入力してください。");
+
+      return authForm.reportValidity();
     }
 
     function renderLoginRequired() {
@@ -175,9 +214,18 @@
         : "ログインしていません。";
       authEmail.disabled = isLoggedIn;
       authPassword.disabled = isLoggedIn;
+      authFields.forEach((field) => {
+        field.hidden = isLoggedIn;
+      });
       signupButton.hidden = isLoggedIn;
       signinButton.hidden = isLoggedIn;
       signoutButton.hidden = !isLoggedIn;
+      signupButton.classList.toggle("auth-button-strong", !isLoggedIn);
+      signupButton.classList.toggle("auth-button-muted", isLoggedIn);
+      signinButton.classList.toggle("auth-button-strong", !isLoggedIn);
+      signinButton.classList.toggle("auth-button-muted", isLoggedIn);
+      signoutButton.classList.toggle("auth-button-strong", isLoggedIn);
+      signoutButton.classList.toggle("auth-button-muted", !isLoggedIn);
       postName.disabled = !isLoggedIn;
       postBody.disabled = !isLoggedIn;
       postSubmit.disabled = !isLoggedIn;
@@ -250,7 +298,7 @@
     }
 
     async function handleSignUp() {
-      if (!authForm.reportValidity()) {
+      if (!validateAuthInput(false)) {
         return;
       }
 
@@ -282,12 +330,11 @@
     }
 
     async function handleSignIn() {
-      if (!authForm.reportValidity()) {
+      if (!validateAuthInput(true)) {
         return;
       }
 
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
+      const { email, password, isPresentationLogin } = resolveLoginInput();
 
       if (!email || !password) {
         setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
@@ -302,15 +349,33 @@
       setAuthLoading(false);
 
       if (error) {
+        if (isPresentationLogin) {
+          isPresentationMode = true;
+          authPassword.value = "";
+          updateAuthUI({ email: PRESENTATION_LOGIN_NAME });
+          setAuthMessage("発表用ログインでログインしました。", "success");
+          await loadPosts();
+          return;
+        }
+
         setAuthMessage(`ログインできませんでした: ${error.message}`, "error");
         return;
       }
 
+      isPresentationMode = false;
       authPassword.value = "";
-      setAuthMessage("ログインしました。", "success");
+      setAuthMessage(isPresentationLogin ? "発表用ログインでログインしました。" : "ログインしました。", "success");
     }
 
     async function handleSignOut() {
+      if (isPresentationMode) {
+        isPresentationMode = false;
+        postForm.reset();
+        updateAuthUI(null);
+        setAuthMessage("ログアウトしました。", "success");
+        return;
+      }
+
       setAuthLoading(true);
       setAuthMessage("", "");
 
@@ -328,6 +393,13 @@
     }
 
     signupButton.addEventListener("click", handleSignUp);
+    authEmail.addEventListener("input", () => {
+      authEmail.setCustomValidity("");
+      authPassword.setCustomValidity("");
+    });
+    authPassword.addEventListener("input", () => {
+      authPassword.setCustomValidity("");
+    });
     authForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       await handleSignIn();
@@ -372,6 +444,10 @@
     });
 
     boardClient.auth.onAuthStateChange((_event, session) => {
+      if (isPresentationMode) {
+        return;
+      }
+
       updateAuthUI(session?.user);
       if (session?.user) {
         loadPosts();

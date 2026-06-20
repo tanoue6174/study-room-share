@@ -322,7 +322,12 @@ p {
   font: inherit;
 }
 
-.auth-logout {
+.auth-button-strong {
+  color: #ffffff;
+  background: var(--green);
+}
+
+.auth-button-muted {
   color: #173b78;
   border: 1px solid var(--line);
   background: #eef5ff;

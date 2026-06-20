@@ -77,15 +77,36 @@
         <p class="board-intro">自習場所の相談や、空き教室の情報共有に使えます。</p>
       </div>
 
+      <div class="auth-panel" aria-labelledby="auth-title">
+        <div>
+          <h3 id="auth-title">ログイン</h3>
+          <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
+        </div>
+        <form class="auth-form" id="auth-form">
+          <label for="auth-email">メールアドレス</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" required>
+
+          <label for="auth-password">パスワード</label>
+          <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
+
+          <div class="auth-actions">
+            <button class="button primary" id="signup-button" type="button">新規登録</button>
+            <button class="button primary" id="signin-button" type="submit">ログイン</button>
+            <button class="button secondary auth-logout" id="signout-button" type="button" hidden>ログアウト</button>
+          </div>
+          <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+
       <div class="board-layout">
         <form class="board-form" id="post-form">
           <label for="post-name">名前</label>
-          <input id="post-name" name="name" type="text" maxlength="40" autocomplete="name" required>
+          <input id="post-name" name="name" type="text" maxlength="40" autocomplete="name" required disabled>
 
           <label for="post-body">投稿内容</label>
-          <textarea id="post-body" name="body" rows="5" maxlength="1000" required></textarea>
+          <textarea id="post-body" name="body" rows="5" maxlength="1000" required disabled></textarea>
 
-          <button class="button primary board-submit" id="post-submit" type="submit">投稿する</button>
+          <button class="button primary board-submit" id="post-submit" type="submit" disabled>投稿する</button>
           <p class="board-message" id="post-message" role="status" aria-live="polite"></p>
         </form>
 
@@ -105,16 +126,66 @@
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
 
     const boardClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const authForm = document.getElementById("auth-form");
+    const authEmail = document.getElementById("auth-email");
+    const authPassword = document.getElementById("auth-password");
+    const authStatus = document.getElementById("auth-status");
+    const authMessage = document.getElementById("auth-message");
+    const signupButton = document.getElementById("signup-button");
+    const signinButton = document.getElementById("signin-button");
+    const signoutButton = document.getElementById("signout-button");
     const postForm = document.getElementById("post-form");
     const postName = document.getElementById("post-name");
     const postBody = document.getElementById("post-body");
     const postSubmit = document.getElementById("post-submit");
     const postMessage = document.getElementById("post-message");
     const postList = document.getElementById("post-list");
+    let currentUser = null;
 
     function setMessage(text, type) {
       postMessage.textContent = text;
       postMessage.dataset.type = type || "";
+    }
+
+    function setAuthMessage(text, type) {
+      authMessage.textContent = text;
+      authMessage.dataset.type = type || "";
+    }
+
+    function setAuthLoading(isLoading) {
+      signupButton.disabled = isLoading;
+      signinButton.disabled = isLoading;
+      signoutButton.disabled = isLoading;
+    }
+
+    function renderLoginRequired() {
+      postList.innerHTML = "";
+      const empty = document.createElement("p");
+      empty.className = "empty-posts";
+      empty.textContent = "掲示板を使うにはログインしてください。";
+      postList.appendChild(empty);
+    }
+
+    function updateAuthUI(user) {
+      currentUser = user || null;
+      const isLoggedIn = Boolean(currentUser);
+
+      authStatus.textContent = isLoggedIn
+        ? `${currentUser.email} でログイン中です。`
+        : "ログインしていません。";
+      authEmail.disabled = isLoggedIn;
+      authPassword.disabled = isLoggedIn;
+      signupButton.hidden = isLoggedIn;
+      signinButton.hidden = isLoggedIn;
+      signoutButton.hidden = !isLoggedIn;
+      postName.disabled = !isLoggedIn;
+      postBody.disabled = !isLoggedIn;
+      postSubmit.disabled = !isLoggedIn;
+
+      if (!isLoggedIn) {
+        setMessage("ログインすると投稿できます。", "");
+        renderLoginRequired();
+      }
     }
 
     function renderPosts(posts) {
@@ -158,6 +229,11 @@
     }
 
     async function loadPosts() {
+      if (!currentUser) {
+        renderLoginRequired();
+        return;
+      }
+
       const { data, error } = await boardClient
         .from("posts")
         .select("id, name, body, created_at")
@@ -173,8 +249,98 @@
       renderPosts(data || []);
     }
 
+    async function handleSignUp() {
+      if (!authForm.reportValidity()) {
+        return;
+      }
+
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+
+      if (!email || !password) {
+        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
+        return;
+      }
+
+      setAuthLoading(true);
+      setAuthMessage("", "");
+
+      const { data, error } = await boardClient.auth.signUp({ email, password });
+
+      setAuthLoading(false);
+
+      if (error) {
+        setAuthMessage(`新規登録できませんでした: ${error.message}`, "error");
+        return;
+      }
+
+      if (data.session) {
+        setAuthMessage("新規登録してログインしました。", "success");
+      } else {
+        setAuthMessage("確認メールを送信しました。メール内のリンクを開いて登録を完了してください。", "success");
+      }
+    }
+
+    async function handleSignIn() {
+      if (!authForm.reportValidity()) {
+        return;
+      }
+
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+
+      if (!email || !password) {
+        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
+        return;
+      }
+
+      setAuthLoading(true);
+      setAuthMessage("", "");
+
+      const { error } = await boardClient.auth.signInWithPassword({ email, password });
+
+      setAuthLoading(false);
+
+      if (error) {
+        setAuthMessage(`ログインできませんでした: ${error.message}`, "error");
+        return;
+      }
+
+      authPassword.value = "";
+      setAuthMessage("ログインしました。", "success");
+    }
+
+    async function handleSignOut() {
+      setAuthLoading(true);
+      setAuthMessage("", "");
+
+      const { error } = await boardClient.auth.signOut();
+
+      setAuthLoading(false);
+
+      if (error) {
+        setAuthMessage(`ログアウトできませんでした: ${error.message}`, "error");
+        return;
+      }
+
+      postForm.reset();
+      setAuthMessage("ログアウトしました。", "success");
+    }
+
+    signupButton.addEventListener("click", handleSignUp);
+    authForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await handleSignIn();
+    });
+    signoutButton.addEventListener("click", handleSignOut);
+
     postForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+
+      if (!currentUser) {
+        setMessage("投稿するにはログインしてください。", "error");
+        return;
+      }
 
       const name = postName.value.trim();
       const body = postBody.value.trim();
@@ -205,7 +371,22 @@
       await loadPosts();
     });
 
-    loadPosts();
+    boardClient.auth.onAuthStateChange((_event, session) => {
+      updateAuthUI(session?.user);
+      if (session?.user) {
+        loadPosts();
+      }
+    });
+
+    async function initAuth() {
+      const { data } = await boardClient.auth.getSession();
+      updateAuthUI(data.session?.user);
+      if (data.session?.user) {
+        await loadPosts();
+      }
+    }
+
+    initAuth();
   </script>
 </body>
 </html>

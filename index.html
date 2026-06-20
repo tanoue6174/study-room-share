@@ -341,6 +341,15 @@
         return;
       }
 
+      if (isPresentationLogin) {
+        isPresentationMode = true;
+        authPassword.value = "";
+        updateAuthUI({ email: PRESENTATION_LOGIN_NAME });
+        setAuthMessage("発表用ログインでログインしました。", "success");
+        await loadPosts();
+        return;
+      }
+
       setAuthLoading(true);
       setAuthMessage("", "");
 
@@ -349,15 +358,6 @@
       setAuthLoading(false);
 
       if (error) {
-        if (isPresentationLogin) {
-          isPresentationMode = true;
-          authPassword.value = "";
-          updateAuthUI({ email: PRESENTATION_LOGIN_NAME });
-          setAuthMessage("発表用ログインでログインしました。", "success");
-          await loadPosts();
-          return;
-        }
-
         setAuthMessage(`ログインできませんでした: ${error.message}`, "error");
         return;
       }

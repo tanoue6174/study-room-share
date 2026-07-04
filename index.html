@@ -223,6 +223,54 @@
       return `${value}@study-room-share.local`;
     }
 
+    function toJapaneseAuthError(error) {
+      const message = String(error?.message || "").toLowerCase();
+
+      if (message.includes("already registered") || message.includes("already exists") || message.includes("user already")) {
+        return "このログインIDはすでに使われています。別のログインIDにしてください。";
+      }
+
+      if (message.includes("password") && (message.includes("weak") || message.includes("short") || message.includes("least"))) {
+        return "パスワードが短すぎるか、条件を満たしていません。6文字以上で入力してください。";
+      }
+
+      if (message.includes("invalid login credentials")) {
+        return "ログインIDまたはパスワードが違います。入力内容を確認してください。";
+      }
+
+      if (message.includes("email not confirmed") || message.includes("confirm")) {
+        return "アカウント確認が完了していません。Supabaseのメール確認設定をオフにするか、確認を完了してください。";
+      }
+
+      if (message.includes("rate limit") || message.includes("too many")) {
+        return "短い時間に何度も試しています。少し時間をおいてからもう一度試してください。";
+      }
+
+      if (message.includes("network") || message.includes("failed to fetch")) {
+        return "通信に失敗しました。インターネット接続を確認して、もう一度試してください。";
+      }
+
+      return "原因を特定できませんでした。ログインID、パスワード、Supabaseの設定を確認してください。";
+    }
+
+    function toJapaneseDatabaseError(error) {
+      const message = String(error?.message || "").toLowerCase();
+
+      if (message.includes("study_rooms") || message.includes("relation") || message.includes("does not exist")) {
+        return "自習室用のテーブルがまだ作られていません。Supabaseで supabase-setup.sql を実行してください。";
+      }
+
+      if (message.includes("row-level security") || message.includes("policy") || message.includes("permission")) {
+        return "Supabaseの権限設定で止まっています。RLSポリシーを確認してください。";
+      }
+
+      if (message.includes("check constraint")) {
+        return "入力内容が条件を満たしていません。時間や人数を確認してください。";
+      }
+
+      return "登録できませんでした。入力内容とSupabaseの設定を確認してください。";
+    }
+
     function setRoomLoading(isLoading) {
       roomSubmit.disabled = isLoading;
       refreshRooms.disabled = isLoading;
@@ -382,7 +430,7 @@
       setAuthLoading(false);
 
       if (error) {
-        setAuthMessage(`アカウントを作成できませんでした: ${error.message}`, "error");
+        setAuthMessage(`アカウントを作成できませんでした。${toJapaneseAuthError(error)}`, "error");
         return;
       }
 
@@ -415,7 +463,7 @@
       setAuthLoading(false);
 
       if (error) {
-        setAuthMessage(`ログインできませんでした: ${error.message}`, "error");
+        setAuthMessage(`ログインできませんでした。${toJapaneseAuthError(error)}`, "error");
         return;
       }
 
@@ -432,7 +480,7 @@
       setAuthLoading(false);
 
       if (error) {
-        setAuthMessage(`ログアウトできませんでした: ${error.message}`, "error");
+        setAuthMessage(`ログアウトできませんでした。${toJapaneseAuthError(error)}`, "error");
         return;
       }
 
@@ -474,7 +522,7 @@
       setRoomLoading(false);
 
       if (error) {
-        setRoomMessage(`登録できませんでした: ${error.message}`, "error");
+        setRoomMessage(`登録できませんでした。${toJapaneseDatabaseError(error)}`, "error");
         return;
       }
 

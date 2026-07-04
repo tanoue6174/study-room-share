@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ | トップ</title>
   <link rel="stylesheet" href="style.css?v=20260704-rooms">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -161,7 +161,9 @@
     const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
 
-    const appClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const appClient = window.supabase
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+      : null;
 
     const authForm = document.getElementById("auth-form");
     const displayName = document.getElementById("display-name");
@@ -212,7 +214,7 @@
     }
 
     function isValidLoginId(value) {
-      return /^[a-z0-9_-]{4,24}$/.test(value);
+      return /^[a-z0-9_-]{6,24}$/.test(value);
     }
 
     function loginIdToEmail(value) {
@@ -414,6 +416,11 @@
     }
 
     async function handleSignUp() {
+      if (!appClient) {
+        setAuthMessage("アカウントを作成できませんでした。理由: Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        return;
+      }
+
       const inputProblem = getAuthInputProblem();
 
       if (inputProblem) {
@@ -468,6 +475,11 @@
     }
 
     async function handleSignIn() {
+      if (!appClient) {
+        setAuthMessage("ログインできませんでした。理由: Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        return;
+      }
+
       const inputProblem = getAuthInputProblem();
 
       if (inputProblem) {
@@ -506,6 +518,11 @@
     }
 
     async function handleSignOut() {
+      if (!appClient) {
+        renderLoggedOut();
+        return;
+      }
+
       setAuthLoading(true);
       setAuthMessage("", "");
 
@@ -524,6 +541,11 @@
 
     async function handleRoomSubmit(event) {
       event.preventDefault();
+
+      if (!appClient) {
+        setRoomMessage("登録できませんでした。Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        return;
+      }
 
       if (currentProfile?.role !== "teacher") {
         setRoomMessage("先生アカウントだけが自習室を登録できます。", "error");
@@ -593,6 +615,13 @@
     async function initApp() {
       const today = new Date().toISOString().slice(0, 10);
       availableDate.value = today;
+
+      if (!appClient) {
+        renderLoggedOut();
+        setAuthMessage("Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        return;
+      }
+
       const { data } = await appClient.auth.getSession();
       await handleSession(data.session);
     }

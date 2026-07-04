@@ -3,466 +3,486 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>自習サポートアプリ | トップ</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>郵便番号住所検索</title>
+  <style>
+    :root {
+      --bg: #f4f7f8;
+      --ink: #15212a;
+      --muted: #62717d;
+      --line: #d8e1e6;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --accent-soft: #dff5f1;
+      --danger: #b42318;
+      --warning-bg: #fff5dd;
+      --shadow: 0 22px 70px rgba(21, 33, 42, 0.13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(15, 118, 110, 0.12), transparent 32rem),
+        linear-gradient(145deg, #f8fbfc 0%, #edf4f6 50%, #f9fbfb 100%);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      line-height: 1.6;
+      background: transparent;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(960px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 48px 0;
+      display: grid;
+      align-content: center;
+      gap: 28px;
+    }
+
+    .header {
+      display: grid;
+      gap: 10px;
+    }
+
+    .badge {
+      width: fit-content;
+      padding: 6px 10px;
+      border: 1px solid rgba(15, 118, 110, 0.22);
+      border-radius: 999px;
+      color: var(--accent-dark);
+      background: rgba(255, 255, 255, 0.7);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 650px;
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.2vw, 1.14rem);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.62fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      border: 1px solid rgba(216, 225, 230, 0.9);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .search-panel {
+      padding: clamp(20px, 3.6vw, 34px);
+      display: grid;
+      gap: 22px;
+    }
+
+    .form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      color: #31424f;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 58px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #ffffff;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.14);
+    }
+
+    button {
+      min-height: 58px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--accent);
+      font-weight: 900;
+      cursor: pointer;
+      transition: background 160ms ease, transform 160ms ease, opacity 160ms ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      cursor: progress;
+      opacity: 0.72;
+    }
+
+    .helper {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .status {
+      min-height: 28px;
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status[data-type="error"] {
+      color: var(--danger);
+    }
+
+    .status[data-type="success"] {
+      color: var(--accent-dark);
+    }
+
+    .result {
+      display: grid;
+      gap: 14px;
+    }
+
+    .address-card {
+      padding: clamp(18px, 3vw, 26px);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ffffff 0%, #f2fbf9 100%);
+    }
+
+    .address-card[hidden] {
+      display: none;
+    }
+
+    .zip-label {
+      margin: 0 0 12px;
+      color: var(--accent-dark);
+      font-size: 0.92rem;
+      font-weight: 900;
+    }
+
+    .address {
+      display: grid;
+      gap: 8px;
+    }
+
+    .address span {
+      display: block;
+      overflow-wrap: anywhere;
+      letter-spacing: 0;
+      line-height: 1.18;
+    }
+
+    .prefecture {
+      font-size: clamp(2.15rem, 7vw, 4.7rem);
+      font-weight: 950;
+    }
+
+    .city {
+      font-size: clamp(1.55rem, 4.2vw, 3rem);
+      font-weight: 900;
+    }
+
+    .town {
+      color: #263844;
+      font-size: clamp(1.3rem, 3.3vw, 2.25rem);
+      font-weight: 850;
+    }
+
+    .meta-panel {
+      padding: clamp(18px, 3vw, 28px);
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+
+    .meta-block {
+      display: grid;
+      gap: 6px;
+    }
+
+    .meta-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .meta-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .sample-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .sample-button {
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid rgba(15, 118, 110, 0.22);
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+      font-size: 0.9rem;
+      font-weight: 850;
+    }
+
+    .sample-button:hover {
+      color: #ffffff;
+      background: var(--accent);
+    }
+
+    .notice {
+      padding: 14px;
+      border-radius: 8px;
+      color: #6d4b00;
+      background: var(--warning-bg);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 780px) {
+      .app {
+        width: min(100% - 24px, 620px);
+        padding: 28px 0;
+        align-content: start;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .app {
+        width: min(100% - 20px, 620px);
+      }
+
+      .search-panel,
+      .meta-panel {
+        padding: 18px;
+      }
+
+      input {
+        min-height: 54px;
+        font-size: 1.08rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="メインナビゲーション">
-      <a class="brand" href="index.html">Study Room Share</a>
-      <div class="nav-links">
-        <a class="active" href="index.html">トップ</a>
-        <a href="features.html">機能</a>
-        <a href="use-cases.html">活用例</a>
-      </div>
-    </nav>
-  </header>
+  <main class="app">
+    <header class="header">
+      <div class="badge">ZipCloud API</div>
+      <h1>郵便番号から住所を検索</h1>
+      <p class="lead">7桁の郵便番号を入力すると、都道府県・市区町村・町域をすぐに表示します。</p>
+    </header>
 
-  <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">学校の自習をもっと使いやすくするアプリ</p>
-        <h1>友達の勉強場所と空き教室が分かる、自習サポートアプリ</h1>
-        <p class="lead">
-          テスト期間中に、どの教室が使えるのか、誰がどこで勉強しているのかを分かりやすく共有します。
-          生徒が自習場所を選びやすく、先生が教室利用を管理しやすくなることを目指します。
-        </p>
-        <div class="actions">
-          <a class="button primary" href="features.html">機能を見る</a>
-          <a class="button secondary" href="use-cases.html">使い方を見る</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-heading">
-        <p class="eyebrow">Purpose</p>
-        <h2>このアプリを作る理由</h2>
-      </div>
-      <div class="two-column">
-        <article class="panel">
-          <h3>生徒の迷いを減らす</h3>
-          <p>
-            どの教室が空いているのか、友達がどこにいるのかが分かると、自習を始めるまでの時間を短くできます。
-            「自分も勉強しよう」と思えるきっかけにもなります。
-          </p>
-        </article>
-        <article class="panel">
-          <h3>先生の確認作業を減らす</h3>
-          <p>
-            生徒の希望人数や利用予定を一覧で確認できるため、教室を開ける判断がしやすくなります。
-            紙や口頭で集める手間も減らせます。
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section highlight">
-      <div>
-        <p class="eyebrow">Goal</p>
-        <h2>自習しやすい環境をつくる</h2>
-      </div>
-      <p>
-        このアプリは、空いている教室や友達のいる場所を分かりやすく表示します。
-        生徒が自分に合った自習場所を選びやすくするためのものです。
-        先生にとっても、利用人数や希望時間を確認しやすくなり、教室の準備や管理を進めやすくなります。
-      </p>
-    </section>
-
-    <section class="section board-section" aria-labelledby="board-title">
-      <div class="section-heading">
-        <p class="eyebrow">Board</p>
-        <h2 id="board-title">掲示板</h2>
-        <p class="board-intro">自習場所の相談や、空き教室の情報共有に使えます。</p>
-      </div>
-
-      <div class="auth-panel" aria-labelledby="auth-title">
-        <div>
-          <h3 id="auth-title">ログイン</h3>
-          <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
-        </div>
-        <form class="auth-form" id="auth-form">
-          <label class="auth-field" for="auth-email">メールアドレス</label>
-          <input class="auth-field" id="auth-email" name="email" type="text" autocomplete="username" placeholder="メールアドレス" required>
-
-          <label class="auth-field" for="auth-password">パスワード</label>
-          <input class="auth-field" id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password">
-
-          <div class="auth-actions">
-            <button class="button auth-button-strong" id="signup-button" type="button">新規登録</button>
-            <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
-            <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
+    <section class="shell" aria-label="郵便番号検索">
+      <div class="panel search-panel">
+        <form class="form" id="search-form">
+          <label for="zipcode">郵便番号</label>
+          <div class="input-row">
+            <input id="zipcode" name="zipcode" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="例: 760-0001" maxlength="8" required>
+            <button id="search-button" type="submit">検索</button>
           </div>
-          <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+          <p class="helper">ハイフンあり・なしのどちらでも検索できます。</p>
         </form>
+
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+
+        <section class="address-card" id="result-card" aria-label="検索結果" hidden>
+          <p class="zip-label" id="result-zip"></p>
+          <div class="address">
+            <span class="prefecture" id="prefecture"></span>
+            <span class="city" id="city"></span>
+            <span class="town" id="town"></span>
+          </div>
+        </section>
       </div>
 
-      <div class="board-layout">
-        <form class="board-form" id="post-form">
-          <label for="post-name">名前</label>
-          <input id="post-name" name="name" type="text" maxlength="40" autocomplete="name" required disabled>
-
-          <label for="post-body">投稿内容</label>
-          <textarea id="post-body" name="body" rows="5" maxlength="1000" required disabled></textarea>
-
-          <button class="button primary board-submit" id="post-submit" type="submit" disabled>投稿する</button>
-          <p class="board-message" id="post-message" role="status" aria-live="polite"></p>
-        </form>
-
-        <div class="post-list" id="post-list" aria-live="polite">
-          <p class="empty-posts">投稿を読み込んでいます。</p>
+      <aside class="panel meta-panel" aria-label="補助情報">
+        <div class="meta-block">
+          <p class="meta-title">入力例</p>
+          <p class="meta-text">サンプルを押すとすぐ検索できます。</p>
         </div>
-      </div>
+        <ul class="sample-list">
+          <li><button class="sample-button" type="button" data-zip="7600001">7600001</button></li>
+          <li><button class="sample-button" type="button" data-zip="100-0001">100-0001</button></li>
+          <li><button class="sample-button" type="button" data-zip="0600000">0600000</button></li>
+        </ul>
+        <div class="notice">見つからない郵便番号や未入力のときは、ここではなく検索エリアにメッセージを表示します。</div>
+      </aside>
     </section>
   </main>
 
-  <footer class="footer">
-    <p>Study Room Share | 自習場所共有アプリ</p>
-  </footer>
-
   <script>
-    const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
-    const PRESENTATION_LOGIN_NAME = "たのうえ";
-    const PRESENTATION_LOGIN_EMAIL = "demo-user@example.invalid";
-    const PRESENTATION_LOGIN_PASSWORD = "DEMO_PASSWORD_REDACTED";
+    const form = document.getElementById("search-form");
+    const input = document.getElementById("zipcode");
+    const button = document.getElementById("search-button");
+    const statusText = document.getElementById("status");
+    const resultCard = document.getElementById("result-card");
+    const resultZip = document.getElementById("result-zip");
+    const prefecture = document.getElementById("prefecture");
+    const city = document.getElementById("city");
+    const town = document.getElementById("town");
+    const sampleButtons = document.querySelectorAll(".sample-button");
 
-    const boardClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    const authForm = document.getElementById("auth-form");
-    const authEmail = document.getElementById("auth-email");
-    const authPassword = document.getElementById("auth-password");
-    const authStatus = document.getElementById("auth-status");
-    const authMessage = document.getElementById("auth-message");
-    const authFields = document.querySelectorAll(".auth-field");
-    const signupButton = document.getElementById("signup-button");
-    const signinButton = document.getElementById("signin-button");
-    const signoutButton = document.getElementById("signout-button");
-    const postForm = document.getElementById("post-form");
-    const postName = document.getElementById("post-name");
-    const postBody = document.getElementById("post-body");
-    const postSubmit = document.getElementById("post-submit");
-    const postMessage = document.getElementById("post-message");
-    const postList = document.getElementById("post-list");
-    let currentUser = null;
-    let isPresentationMode = false;
-
-    function setMessage(text, type) {
-      postMessage.textContent = text;
-      postMessage.dataset.type = type || "";
+    function normalizeZipcode(value) {
+      return value.replace(/[^\d]/g, "");
     }
 
-    function setAuthMessage(text, type) {
-      authMessage.textContent = text;
-      authMessage.dataset.type = type || "";
+    function formatZipcode(value) {
+      const normalized = normalizeZipcode(value);
+      return normalized.length === 7
+        ? `${normalized.slice(0, 3)}-${normalized.slice(3)}`
+        : value;
     }
 
-    function setAuthLoading(isLoading) {
-      signupButton.disabled = isLoading;
-      signinButton.disabled = isLoading;
-      signoutButton.disabled = isLoading;
+    function setStatus(message, type = "") {
+      statusText.textContent = message;
+      statusText.dataset.type = type;
     }
 
-    function isPresentationLoginName(value) {
-      return value.trim() === PRESENTATION_LOGIN_NAME;
+    function clearResult() {
+      resultCard.hidden = true;
+      resultZip.textContent = "";
+      prefecture.textContent = "";
+      city.textContent = "";
+      town.textContent = "";
     }
 
-    function resolveLoginInput() {
-      const emailInput = authEmail.value.trim();
-      const isPresentationLogin = isPresentationLoginName(emailInput);
-
-      return {
-        email: isPresentationLogin ? PRESENTATION_LOGIN_EMAIL : emailInput,
-        password: isPresentationLogin ? PRESENTATION_LOGIN_PASSWORD : authPassword.value,
-        isPresentationLogin
-      };
+    function renderAddress(zipcode, address) {
+      resultZip.textContent = `〒${formatZipcode(zipcode)}`;
+      prefecture.textContent = address.address1;
+      city.textContent = address.address2;
+      town.textContent = address.address3;
+      resultCard.hidden = false;
     }
 
-    function isValidEmail(value) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    }
+    async function searchAddress(rawZipcode) {
+      const zipcode = normalizeZipcode(rawZipcode);
 
-    function validateAuthInput(allowPresentationLogin) {
-      const emailInput = authEmail.value.trim();
+      clearResult();
 
-      if (allowPresentationLogin && isPresentationLoginName(emailInput)) {
-        authEmail.setCustomValidity("");
-        authPassword.setCustomValidity("");
-        return true;
-      }
-
-      authEmail.setCustomValidity(isValidEmail(emailInput) ? "" : "メールアドレスを入力してください。");
-      authPassword.setCustomValidity(authPassword.value ? "" : "パスワードを入力してください。");
-
-      return authForm.reportValidity();
-    }
-
-    function renderLoginRequired() {
-      postList.innerHTML = "";
-      const empty = document.createElement("p");
-      empty.className = "empty-posts";
-      empty.textContent = "掲示板を使うにはログインしてください。";
-      postList.appendChild(empty);
-    }
-
-    function updateAuthUI(user) {
-      currentUser = user || null;
-      const isLoggedIn = Boolean(currentUser);
-
-      authStatus.textContent = isLoggedIn
-        ? `${currentUser.email} でログイン中です。`
-        : "ログインしていません。";
-      authEmail.disabled = isLoggedIn;
-      authPassword.disabled = isLoggedIn;
-      authFields.forEach((field) => {
-        field.hidden = isLoggedIn;
-      });
-      signupButton.hidden = isLoggedIn;
-      signinButton.hidden = isLoggedIn;
-      signoutButton.hidden = !isLoggedIn;
-      signupButton.classList.toggle("auth-button-strong", !isLoggedIn);
-      signupButton.classList.toggle("auth-button-muted", isLoggedIn);
-      signinButton.classList.toggle("auth-button-strong", !isLoggedIn);
-      signinButton.classList.toggle("auth-button-muted", isLoggedIn);
-      signoutButton.classList.toggle("auth-button-strong", isLoggedIn);
-      signoutButton.classList.toggle("auth-button-muted", !isLoggedIn);
-      postName.disabled = !isLoggedIn;
-      postBody.disabled = !isLoggedIn;
-      postSubmit.disabled = !isLoggedIn;
-
-      if (!isLoggedIn) {
-        setMessage("ログインすると投稿できます。", "");
-        renderLoginRequired();
-      }
-    }
-
-    function renderPosts(posts) {
-      postList.innerHTML = "";
-
-      if (!posts.length) {
-        const empty = document.createElement("p");
-        empty.className = "empty-posts";
-        empty.textContent = "まだ投稿はありません。最初の投稿を書いてみましょう。";
-        postList.appendChild(empty);
+      if (zipcode.length !== 7) {
+        setStatus("7桁の郵便番号を入力してください。", "error");
+        input.focus();
         return;
       }
 
-      posts.forEach((post) => {
-        const item = document.createElement("article");
-        item.className = "post-item";
+      button.disabled = true;
+      setStatus("検索しています...");
 
-        const header = document.createElement("div");
-        header.className = "post-header";
+      try {
+        const endpoint = `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${encodeURIComponent(zipcode)}`;
+        const response = await fetch(endpoint);
 
-        const name = document.createElement("strong");
-        name.textContent = post.name;
+        if (!response.ok) {
+          throw new Error("network");
+        }
 
-        const time = document.createElement("time");
-        time.dateTime = post.created_at;
-        time.textContent = new Date(post.created_at).toLocaleString("ja-JP", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
+        const data = await response.json();
 
-        const body = document.createElement("p");
-        body.textContent = post.body;
+        if (data.status !== 200) {
+          setStatus(data.message || "検索できませんでした。時間をおいて再度お試しください。", "error");
+          return;
+        }
 
-        header.append(name, time);
-        item.append(header, body);
-        postList.appendChild(item);
-      });
-    }
+        if (!data.results || data.results.length === 0) {
+          setStatus("該当する住所が見つかりませんでした。", "error");
+          return;
+        }
 
-    async function loadPosts() {
-      if (!currentUser) {
-        renderLoginRequired();
-        return;
-      }
-
-      const { data, error } = await boardClient
-        .from("posts")
-        .select("id, name, body, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) {
-        setMessage("投稿を読み込めませんでした。Supabaseの設定を確認してください。", "error");
-        renderPosts([]);
-        return;
-      }
-
-      renderPosts(data || []);
-    }
-
-    async function handleSignUp() {
-      if (!validateAuthInput(false)) {
-        return;
-      }
-
-      const email = authEmail.value.trim();
-      const password = authPassword.value;
-
-      if (!email || !password) {
-        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
-        return;
-      }
-
-      setAuthLoading(true);
-      setAuthMessage("", "");
-
-      const { data, error } = await boardClient.auth.signUp({ email, password });
-
-      setAuthLoading(false);
-
-      if (error) {
-        setAuthMessage(`新規登録できませんでした: ${error.message}`, "error");
-        return;
-      }
-
-      if (data.session) {
-        setAuthMessage("新規登録してログインしました。", "success");
-      } else {
-        setAuthMessage("確認メールを送信しました。メール内のリンクを開いて登録を完了してください。", "success");
+        renderAddress(zipcode, data.results[0]);
+        setStatus("住所が見つかりました。", "success");
+      } catch (error) {
+        setStatus("通信に失敗しました。ネットワーク接続を確認してください。", "error");
+      } finally {
+        button.disabled = false;
       }
     }
 
-    async function handleSignIn() {
-      if (!validateAuthInput(true)) {
-        return;
-      }
-
-      const { email, password, isPresentationLogin } = resolveLoginInput();
-
-      if (!email || !password) {
-        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
-        return;
-      }
-
-      if (isPresentationLogin) {
-        isPresentationMode = true;
-        authPassword.value = "";
-        updateAuthUI({ email: PRESENTATION_LOGIN_NAME });
-        setAuthMessage("発表用ログインでログインしました。", "success");
-        await loadPosts();
-        return;
-      }
-
-      setAuthLoading(true);
-      setAuthMessage("", "");
-
-      const { error } = await boardClient.auth.signInWithPassword({ email, password });
-
-      setAuthLoading(false);
-
-      if (error) {
-        setAuthMessage(`ログインできませんでした: ${error.message}`, "error");
-        return;
-      }
-
-      isPresentationMode = false;
-      authPassword.value = "";
-      setAuthMessage(isPresentationLogin ? "発表用ログインでログインしました。" : "ログインしました。", "success");
-    }
-
-    async function handleSignOut() {
-      if (isPresentationMode) {
-        isPresentationMode = false;
-        postForm.reset();
-        updateAuthUI(null);
-        setAuthMessage("ログアウトしました。", "success");
-        return;
-      }
-
-      setAuthLoading(true);
-      setAuthMessage("", "");
-
-      const { error } = await boardClient.auth.signOut();
-
-      setAuthLoading(false);
-
-      if (error) {
-        setAuthMessage(`ログアウトできませんでした: ${error.message}`, "error");
-        return;
-      }
-
-      postForm.reset();
-      setAuthMessage("ログアウトしました。", "success");
-    }
-
-    signupButton.addEventListener("click", handleSignUp);
-    authEmail.addEventListener("input", () => {
-      authEmail.setCustomValidity("");
-      authPassword.setCustomValidity("");
+    input.addEventListener("input", () => {
+      const digits = normalizeZipcode(input.value).slice(0, 7);
+      input.value = digits.length > 3 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : digits;
     });
-    authPassword.addEventListener("input", () => {
-      authPassword.setCustomValidity("");
-    });
-    authForm.addEventListener("submit", async (event) => {
+
+    form.addEventListener("submit", (event) => {
       event.preventDefault();
-      await handleSignIn();
-    });
-    signoutButton.addEventListener("click", handleSignOut);
-
-    postForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      if (!currentUser) {
-        setMessage("投稿するにはログインしてください。", "error");
-        return;
-      }
-
-      const name = postName.value.trim();
-      const body = postBody.value.trim();
-
-      if (!name || !body) {
-        setMessage("名前と投稿内容を入力してください。", "error");
-        return;
-      }
-
-      postSubmit.disabled = true;
-      postSubmit.textContent = "投稿中...";
-      setMessage("", "");
-
-      const { error } = await boardClient
-        .from("posts")
-        .insert({ name, body });
-
-      postSubmit.disabled = false;
-      postSubmit.textContent = "投稿する";
-
-      if (error) {
-        setMessage("投稿できませんでした。少し時間をおいてもう一度お試しください。", "error");
-        return;
-      }
-
-      postForm.reset();
-      setMessage("投稿しました。", "success");
-      await loadPosts();
+      searchAddress(input.value);
     });
 
-    boardClient.auth.onAuthStateChange((_event, session) => {
-      if (isPresentationMode) {
-        return;
-      }
-
-      updateAuthUI(session?.user);
-      if (session?.user) {
-        loadPosts();
-      }
+    sampleButtons.forEach((sampleButton) => {
+      sampleButton.addEventListener("click", () => {
+        input.value = formatZipcode(sampleButton.dataset.zip);
+        searchAddress(input.value);
+      });
     });
-
-    async function initAuth() {
-      const { data } = await boardClient.auth.getSession();
-      updateAuthUI(data.session?.user);
-      if (data.session?.user) {
-        await loadPosts();
-      }
-    }
-
-    initAuth();
   </script>
 </body>
 </html>

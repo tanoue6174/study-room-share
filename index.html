@@ -466,6 +466,24 @@
       writeLocalJson(LOCAL_ROOMS_KEY, rooms);
     }
 
+    function getPasswordAccount(id, name) {
+      const role = roleFromPassword(id);
+      return {
+        login_id: id,
+        display_name: name || roleLabel(role),
+        role,
+        password: id
+      };
+    }
+
+    function signInWithPasswordFallback(id, name, message) {
+      const accounts = getLocalAccounts();
+      const account = accounts[id] || getPasswordAccount(id, name);
+      accounts[id] = account;
+      saveLocalAccounts(accounts);
+      finishLocalLogin(account, message);
+    }
+
     function normalizeLoginId(value) {
       return value.trim().toLowerCase();
     }
@@ -795,7 +813,14 @@
 
     async function handleSignUp() {
       if (!appClient) {
-        setAuthMessage("アカウントを作成できませんでした。理由: Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        const inputProblem = getAuthInputProblem();
+        if (inputProblem) {
+          setAuthMessage(`アカウントを作成できませんでした。${inputProblem}`, "error");
+          return;
+        }
+        const id = getPasswordCredential();
+        const name = displayName.value.trim() || roleLabel(roleFromPassword(id));
+        signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
         return;
       }
 
@@ -832,6 +857,10 @@
         setAuthLoading(false);
 
         if (error) {
+          if (isConnectionError(error)) {
+            signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+            return;
+          }
           setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -843,13 +872,23 @@
         }
       } catch (error) {
         setAuthLoading(false);
+        if (isConnectionError(error)) {
+          signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+          return;
+        }
         setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }
 
     async function handleSignIn() {
       if (!appClient) {
-        setAuthMessage("ログインできませんでした。理由: Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
+        const inputProblem = getAuthInputProblem();
+        if (inputProblem) {
+          setAuthMessage(`ログインできませんでした。${inputProblem}`, "error");
+          return;
+        }
+        const id = getPasswordCredential();
+        signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
         return;
       }
 
@@ -876,6 +915,10 @@
         setAuthLoading(false);
 
         if (error) {
+          if (isConnectionError(error)) {
+            signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
+            return;
+          }
           setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -883,6 +926,10 @@
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);
+        if (isConnectionError(error)) {
+          signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
+          return;
+        }
         setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }

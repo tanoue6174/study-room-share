@@ -385,6 +385,7 @@ p {
 
 .role-summary {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 18px;
   align-items: center;
@@ -396,12 +397,11 @@ p {
 }
 
 .school-banner {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: #ffffff;
-  background: var(--green);
-  font-weight: 800;
+  flex: 0 0 100%;
+  color: var(--ink);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .role-summary h3 {

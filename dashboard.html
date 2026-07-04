@@ -386,6 +386,8 @@
     const roleSummary = document.getElementById("role-summary");
     const dashboardTitle = document.getElementById("dashboard-title");
     const dashboardNote = document.getElementById("dashboard-note");
+    const roomLayout = document.querySelector(".room-layout");
+    const requestPanel = document.querySelector(".request-panel");
     const roomForm = document.getElementById("room-form");
     const roomName = document.getElementById("room-name");
     const roomLocation = document.getElementById("room-location");
@@ -656,6 +658,12 @@
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
       roomForm.hidden = true;
+      if (roomLayout) {
+        roomLayout.hidden = true;
+      }
+      if (requestPanel) {
+        requestPanel.hidden = true;
+      }
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
@@ -683,6 +691,12 @@
       accountRole.disabled = true;
       loginId.disabled = true;
       roleSummary.hidden = false;
+      if (roomLayout) {
+        roomLayout.hidden = false;
+      }
+      if (requestPanel) {
+        requestPanel.hidden = false;
+      }
       roomForm.hidden = role !== "teacher";
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";

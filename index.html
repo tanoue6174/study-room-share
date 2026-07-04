@@ -985,22 +985,13 @@
     async function initApp() {
       const today = new Date().toISOString().slice(0, 10);
       availableDate.value = today;
-
-      const localSession = getLocalSession();
-      if (localSession?.user && localSession?.profile) {
-        renderLoggedIn(localSession.user, localSession.profile);
-        await loadRooms();
-        return;
-      }
+      clearLocalSession();
+      renderLoggedOut();
 
       if (!appClient) {
-        renderLoggedOut();
         setAuthMessage("Supabaseライブラリを読み込めませんでした。ページを再読み込みしてください。", "error");
         return;
       }
-
-      const { data } = await appClient.auth.getSession();
-      await handleSession(data.session);
     }
 
     initApp();

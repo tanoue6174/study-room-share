@@ -81,11 +81,8 @@
           </select>
 
           <label for="login-id">ログインID</label>
-          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="4" maxlength="24" pattern="[A-Za-z0-9_-]+" value="STUDENT_PASSWORD_REDACTED" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
-          <p class="field-help">ログインIDは、数字や英文字で登録できます。例: STUDENT_PASSWORD_REDACTED</p>
-
-          <label for="auth-password">パスワード</label>
-          <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
+          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" value="STUDENT_PASSWORD_REDACTED" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
+          <p class="field-help">ログインIDは、数字や英文字で登録できます。このIDだけでアカウント作成とログインができます。</p>
 
           <div class="auth-actions">
             <button class="button primary" id="signup-button" type="button">アカウント作成</button>
@@ -170,7 +167,6 @@
     const displayName = document.getElementById("display-name");
     const accountRole = document.getElementById("account-role");
     const loginId = document.getElementById("login-id");
-    const authPassword = document.getElementById("auth-password");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
     const signupButton = document.getElementById("signup-button");
@@ -228,11 +224,11 @@
       const status = error?.status;
 
       if (status === 422) {
-        return "入力内容に問題があります。ログインIDがすでに使われているか、パスワードの条件を満たしていない可能性があります。";
+        return "入力内容に問題があります。ログインIDがすでに使われているか、ログインIDの文字数が足りない可能性があります。";
       }
 
       if (status === 400) {
-        return "入力内容が正しくありません。ログインIDとパスワードを確認してください。";
+        return "入力内容が正しくありません。ログインIDを確認してください。";
       }
 
       if (message.includes("already registered") || message.includes("already exists") || message.includes("user already")) {
@@ -240,11 +236,11 @@
       }
 
       if (message.includes("password") && (message.includes("weak") || message.includes("short") || message.includes("least"))) {
-        return "パスワードが短すぎるか、条件を満たしていません。6文字以上で入力してください。";
+        return "ログインIDが短すぎます。6文字以上で入力してください。";
       }
 
       if (message.includes("invalid login credentials")) {
-        return "ログインIDまたはパスワードが違います。入力内容を確認してください。";
+        return "ログインIDが違います。入力内容を確認してください。";
       }
 
       if (message.includes("email not confirmed") || message.includes("confirm")) {
@@ -259,7 +255,7 @@
         return "Supabaseへの接続に失敗しました。時間をおいて再試行するか、SupabaseのURLと公開キー、メール確認設定を確認してください。";
       }
 
-      return "原因を特定できませんでした。ログインID、パスワード、Supabaseの設定を確認してください。";
+      return "原因を特定できませんでした。ログインIDとSupabaseの設定を確認してください。";
     }
 
     function getAuthInputProblem() {
@@ -270,15 +266,7 @@
       }
 
       if (!isValidLoginId(id)) {
-        return "ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。";
-      }
-
-      if (!authPassword.value) {
-        return "パスワードが入力されていません。";
-      }
-
-      if (authPassword.value.length < 6) {
-        return "パスワードは6文字以上で入力してください。";
+        return "ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。";
       }
 
       return "";
@@ -323,7 +311,6 @@
       displayName.disabled = false;
       accountRole.disabled = false;
       loginId.disabled = false;
-      authPassword.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
     }
 
@@ -340,7 +327,6 @@
       displayName.disabled = true;
       accountRole.disabled = true;
       loginId.disabled = true;
-      authPassword.disabled = true;
       roleSummary.hidden = false;
       roomForm.hidden = role !== "teacher";
 
@@ -438,12 +424,12 @@
 
       const id = normalizeLoginId(loginId.value);
       const email = loginIdToEmail(id);
-      const password = authPassword.value;
+      const password = id;
       const name = displayName.value.trim() || id;
       const role = accountRole.value;
 
       if (!isValidLoginId(id)) {
-        setAuthMessage("ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
+        setAuthMessage("ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
         return;
       }
 
@@ -473,7 +459,7 @@
         if (data.session) {
           setAuthMessage("アカウントを作成してログインしました。", "success");
         } else {
-          setAuthMessage("アカウントを作成しました。ログインIDとパスワードでログインしてください。", "success");
+          setAuthMessage("アカウントを作成しました。ログインIDでログインしてください。", "success");
         }
       } catch (error) {
         setAuthLoading(false);
@@ -487,13 +473,12 @@
       if (inputProblem) {
         setAuthMessage(`ログインできませんでした。${inputProblem}`, "error");
         loginId.reportValidity();
-        authPassword.reportValidity();
         return;
       }
 
       const id = normalizeLoginId(loginId.value);
       if (!isValidLoginId(id)) {
-        setAuthMessage("ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
+        setAuthMessage("ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
         return;
       }
 
@@ -503,7 +488,7 @@
       try {
         const { error } = await appClient.auth.signInWithPassword({
           email: loginIdToEmail(id),
-          password: authPassword.value
+          password: id
         });
 
         setAuthLoading(false);
@@ -513,7 +498,6 @@
           return;
         }
 
-        authPassword.value = "";
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);

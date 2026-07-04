@@ -105,8 +105,8 @@
         <form class="room-form" id="room-form" hidden>
           <h3>自習室を登録</h3>
 
-          <label for="room-name">友達の名前</label>
-          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 田中さん" required>
+          <label for="room-name">部屋名</label>
+          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
 
           <label for="room-location">場所</label>
           <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
@@ -813,7 +813,7 @@
             value: room.location
           },
           {
-            label: "友達の名前",
+            label: "部屋名",
             value: room.room_name
           }
         ];

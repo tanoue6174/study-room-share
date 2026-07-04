@@ -101,7 +101,7 @@
         <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
       </div>
 
-      <div class="room-layout">
+      <div class="room-layout" hidden>
         <form class="room-form" id="room-form" hidden>
           <h3>自習室を登録</h3>
 
@@ -151,7 +151,7 @@
         </div>
       </div>
 
-      <section class="request-panel" aria-labelledby="request-title">
+      <section class="request-panel" aria-labelledby="request-title" hidden>
         <div class="request-heading">
           <div>
             <p class="eyebrow">Request</p>
@@ -690,14 +690,14 @@
       displayName.disabled = true;
       accountRole.disabled = true;
       loginId.disabled = true;
-      roleSummary.hidden = false;
+      roleSummary.hidden = !isDashboardPage;
       if (roomLayout) {
-        roomLayout.hidden = false;
+        roomLayout.hidden = !isDashboardPage;
       }
       if (requestPanel) {
-        requestPanel.hidden = false;
+        requestPanel.hidden = !isDashboardPage;
       }
-      roomForm.hidden = role !== "teacher";
+      roomForm.hidden = !isDashboardPage || role !== "teacher";
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
       dashboardNote.textContent = role === "teacher"

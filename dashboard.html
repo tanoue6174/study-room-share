@@ -690,14 +690,14 @@
       displayName.disabled = true;
       accountRole.disabled = true;
       loginId.disabled = true;
-      roleSummary.hidden = false;
+      roleSummary.hidden = !isDashboardPage;
       if (roomLayout) {
-        roomLayout.hidden = false;
+        roomLayout.hidden = !isDashboardPage;
       }
       if (requestPanel) {
-        requestPanel.hidden = false;
+        requestPanel.hidden = !isDashboardPage;
       }
-      roomForm.hidden = role !== "teacher";
+      roomForm.hidden = !isDashboardPage || role !== "teacher";
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
       dashboardNote.textContent = role === "teacher"

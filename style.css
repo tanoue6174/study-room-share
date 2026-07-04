@@ -339,7 +339,7 @@ p {
 .auth-button-muted {
   color: #173b78;
   border: 1px solid var(--line);
-  background: #eef5ff;
+  background: #ffffff;
 }
 
 .auth-message {

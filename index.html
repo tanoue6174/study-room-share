@@ -84,8 +84,8 @@
           <p class="field-help">ログインIDは、数字や英文字で登録できます。このIDだけでアカウント作成とログインができます。</p>
 
           <div class="auth-actions">
-            <button class="button primary" id="signup-button" type="button">アカウント作成</button>
-            <button class="button auth-button-muted" id="signin-button" type="submit">ログイン</button>
+            <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
+            <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
             <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
@@ -396,6 +396,15 @@
       signoutButton.disabled = isLoading;
     }
 
+    function setAuthButtonColors(isLoggedIn) {
+      signupButton.classList.toggle("auth-button-strong", !isLoggedIn);
+      signupButton.classList.toggle("auth-button-muted", isLoggedIn);
+      signinButton.classList.toggle("auth-button-strong", !isLoggedIn);
+      signinButton.classList.toggle("auth-button-muted", isLoggedIn);
+      signoutButton.classList.toggle("auth-button-strong", isLoggedIn);
+      signoutButton.classList.toggle("auth-button-muted", !isLoggedIn);
+    }
+
     function readLocalJson(key, fallback) {
       try {
         return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
@@ -564,6 +573,7 @@
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
+      setAuthButtonColors(false);
       displayName.disabled = false;
       accountRole.disabled = false;
       loginId.disabled = false;
@@ -580,6 +590,7 @@
       signoutButton.hidden = false;
       signupButton.hidden = true;
       signinButton.hidden = true;
+      setAuthButtonColors(true);
       displayName.disabled = true;
       accountRole.disabled = true;
       loginId.disabled = true;

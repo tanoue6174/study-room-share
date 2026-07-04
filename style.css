@@ -478,18 +478,33 @@ p {
 }
 
 .room-item {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 12px;
+  align-items: start;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfdff;
 }
 
-.room-item h4 {
-  margin: 0 0 6px;
-  font-size: 19px;
+.room-list-cell {
+  min-width: 0;
 }
 
-.room-item p {
+.room-list-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.room-list-cell strong {
+  display: block;
+  color: #173b78;
+  font-size: 16px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
@@ -568,5 +583,9 @@ tr:last-child td {
   .list-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .room-item {
+    grid-template-columns: 1fr;
   }
 }

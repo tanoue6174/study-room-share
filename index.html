@@ -104,8 +104,8 @@
         <form class="room-form" id="room-form" hidden>
           <h3>自習室を登録</h3>
 
-          <label for="room-name">教室名</label>
-          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
+          <label for="room-name">友達の名前</label>
+          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 田中さん" required>
 
           <label for="room-location">場所</label>
           <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
@@ -612,17 +612,35 @@
           weekday: "short"
         });
 
-        const title = document.createElement("h4");
-        title.textContent = room.room_name;
+        const fields = [
+          {
+            label: "時間",
+            value: `${formattedDate} ${room.start_time.slice(0, 5)}-${room.end_time.slice(0, 5)}`
+          },
+          {
+            label: "場所",
+            value: room.location
+          },
+          {
+            label: "友達の名前",
+            value: room.room_name
+          }
+        ];
 
-        const meta = document.createElement("p");
-        meta.className = "room-meta";
-        meta.textContent = `${formattedDate} ${room.start_time.slice(0, 5)}-${room.end_time.slice(0, 5)} / ${room.location} / ${room.capacity}人まで`;
+        fields.forEach((field) => {
+          const cell = document.createElement("div");
+          cell.className = "room-list-cell";
 
-        const note = document.createElement("p");
-        note.textContent = room.note || "メモはありません。";
+          const label = document.createElement("span");
+          label.className = "room-list-label";
+          label.textContent = field.label;
 
-        item.append(title, meta, note);
+          const value = document.createElement("strong");
+          value.textContent = field.value;
+
+          cell.append(label, value);
+          item.appendChild(cell);
+        });
         roomList.appendChild(item);
       });
     }

@@ -220,7 +220,7 @@
     }
 
     function loginIdToEmail(value) {
-      return `${value}@study-room-share.local`;
+      return `${value}@study-room-share.example.com`;
     }
 
     function toJapaneseAuthError(error) {
@@ -256,7 +256,7 @@
       }
 
       if (message.includes("network") || message.includes("failed to fetch")) {
-        return "通信に失敗しました。インターネット接続を確認して、もう一度試してください。";
+        return "Supabaseへの接続に失敗しました。時間をおいて再試行するか、SupabaseのURLと公開キー、メール確認設定を確認してください。";
       }
 
       return "原因を特定できませんでした。ログインID、パスワード、Supabaseの設定を確認してください。";

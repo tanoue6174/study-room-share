@@ -73,19 +73,20 @@
           <label for="display-name">名前</label>
           <input id="display-name" name="display-name" type="text" maxlength="40" autocomplete="name">
 
-          <label for="account-role">登録区分</label>
+          <label for="account-role" aria-hidden="true"></label>
           <select id="account-role" name="account-role">
             <option value="student">生徒</option>
-            <option value="teacher">先生</option>
           </select>
 
-          <label for="registration-password">パスワード</label>
-          <input id="registration-password" name="registration-password" type="password" autocomplete="new-password" placeholder="パスワードを入力">
-          <p class="field-help">先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED だけ登録できます。</p>
+          <p class="field-help">先生アカウントは管理者がSupabaseで付与します。</p>
 
-          <label for="login-id">ログインID</label>
-          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" value="STUDENT_PASSWORD_REDACTED" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
-          <p class="field-help">ログインIDは、数字や英文字で登録できます。このIDだけでアカウント作成とログインができます。</p>
+          <label for="login-id" aria-hidden="true"></label>
+          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
+          <p class="field-help" aria-hidden="true"></p>
+
+          <label for="account-password">パスワード</label>
+          <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
+          <p class="field-help">先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED を入力してください。</p>
 
           <div class="auth-actions">
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
@@ -380,8 +381,8 @@
     const authForm = document.getElementById("auth-form");
     const displayName = document.getElementById("display-name");
     const accountRole = document.getElementById("account-role");
-    const registrationPassword = document.getElementById("registration-password");
     const loginId = document.getElementById("login-id");
+    const accountPassword = document.getElementById("account-password");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
     const signupButton = document.getElementById("signup-button");
@@ -419,6 +420,8 @@
       student: "STUDENT_PASSWORD_REDACTED",
       teacher: "TEACHER_PASSWORD_REDACTED"
     };
+
+    loginId.required = false;
 
     function setAuthMessage(text, type) {
       authMessage.textContent = text;
@@ -529,28 +532,42 @@
       return `${value}@study-room-share.example.com`;
     }
 
+    function getPasswordCredential() {
+      return normalizeLoginId(accountPassword.value);
+    }
+
+    function roleFromPassword(value) {
+      if (value === ROLE_PASSWORDS.teacher) {
+        return "teacher";
+      }
+      if (value === ROLE_PASSWORDS.student) {
+        return "student";
+      }
+      return "";
+    }
+
     function toJapaneseAuthError(error) {
       const message = String(error?.message || "").toLowerCase();
       const status = error?.status;
 
       if (status === 422) {
-        return "入力内容に問題があります。ログインIDがすでに使われているか、ログインIDの文字数が足りない可能性があります。";
+        return "入力内容に問題があります。パスワードを確認してください。";
       }
 
       if (status === 400) {
-        return "入力内容が正しくありません。ログインIDを確認してください。";
+        return "入力内容が正しくありません。パスワードを確認してください。";
       }
 
       if (message.includes("already registered") || message.includes("already exists") || message.includes("user already")) {
-        return "このログインIDはすでに使われています。別のログインIDにしてください。";
+        return "このパスワードのアカウントはすでにあります。ログインしてください。";
       }
 
       if (message.includes("password") && (message.includes("weak") || message.includes("short") || message.includes("least"))) {
-        return "ログインIDが短すぎます。6文字以上で入力してください。";
+        return "パスワードを確認してください。";
       }
 
       if (message.includes("invalid login credentials")) {
-        return "ログインIDが違います。入力内容を確認してください。";
+        return "パスワードが違います。入力内容を確認してください。";
       }
 
       if (message.includes("email not confirmed") || message.includes("confirm")) {
@@ -565,18 +582,18 @@
         return "Supabaseへの接続に失敗しました。時間をおいて再試行するか、SupabaseのURLと公開キー、メール確認設定を確認してください。";
       }
 
-      return "原因を特定できませんでした。ログインIDとSupabaseの設定を確認してください。";
+      return "原因を特定できませんでした。パスワードとSupabaseの設定を確認してください。";
     }
 
     function getAuthInputProblem() {
-      const id = normalizeLoginId(loginId.value);
+      const password = getPasswordCredential();
 
-      if (!id) {
-        return "ログインIDが入力されていません。";
+      if (!password) {
+        return "パスワードが入力されていません。";
       }
 
-      if (!isValidLoginId(id)) {
-        return "ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。";
+      if (!roleFromPassword(password)) {
+        return "パスワードは、先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED のどちらかを入力してください。";
       }
 
       return "";
@@ -678,8 +695,8 @@
       setAuthButtonColors(false);
       displayName.disabled = false;
       accountRole.disabled = false;
-      registrationPassword.disabled = false;
       loginId.disabled = false;
+      accountPassword.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
       updateRequestRoomOptions([]);
       setRequestMessage("", "");
@@ -698,8 +715,8 @@
       setAuthButtonColors(true);
       displayName.disabled = true;
       accountRole.disabled = true;
-      registrationPassword.disabled = true;
       loginId.disabled = true;
+      accountPassword.disabled = true;
       roleSummary.hidden = !isDashboardPage;
       if (roomLayout) {
         roomLayout.hidden = !isDashboardPage;
@@ -781,37 +798,6 @@
       }
     }
 
-    function createLocalAccount(id, name, role) {
-      const accounts = getLocalAccounts();
-
-      if (accounts[id]) {
-        setAuthMessage("アカウントを作成できませんでした。理由: このログインIDはすでに使われています。", "error");
-        return;
-      }
-
-      const account = {
-        login_id: id,
-        display_name: name,
-        role
-      };
-
-      accounts[id] = account;
-      saveLocalAccounts(accounts);
-      finishLocalLogin(account, "Supabaseに接続できなかったため、この端末内にアカウントを作成してログインしました。");
-    }
-
-    function signInLocalAccount(id) {
-      const accounts = getLocalAccounts();
-      const account = accounts[id];
-
-      if (!account) {
-        setAuthMessage("ログインできませんでした。理由: この端末内にそのログインIDのアカウントがありません。先にアカウント作成をしてください。", "error");
-        return;
-      }
-
-      finishLocalLogin(account, "この端末内のアカウントでログインしました。");
-    }
-
     async function fetchProfile(user) {
       const { data, error } = await appClient
         .from("profiles")
@@ -875,25 +861,11 @@
         return;
       }
 
-      const id = normalizeLoginId(loginId.value);
+      const id = getPasswordCredential();
       const email = loginIdToEmail(id);
       const password = id;
-      const name = displayName.value.trim() || id;
-      const role = accountRole.value;
-      const expectedRegistrationPassword = ROLE_PASSWORDS[role];
-      const registrationPasswordValue = registrationPassword.value.trim();
-
-      if (!isValidLoginId(id)) {
-        setAuthMessage("ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
-        return;
-      }
-
-      if (registrationPasswordValue !== expectedRegistrationPassword) {
-        const roleName = roleLabel(role);
-        setAuthMessage(`アカウントを作成できませんでした。理由: ${roleName}として登録するには、正しいパスワードを入力してください。`, "error");
-        registrationPassword.focus();
-        return;
-      }
+      const role = roleFromPassword(id);
+      const name = displayName.value.trim() || roleLabel(role);
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -914,11 +886,6 @@
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
-            createLocalAccount(id, name, role);
-            return;
-          }
-
           setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -926,15 +893,10 @@
         if (data.session) {
           setAuthMessage("アカウントを作成してログインしました。", "success");
         } else {
-          setAuthMessage("アカウントを作成しました。ログインIDでログインしてください。", "success");
+          setAuthMessage("アカウントを作成しました。パスワードでログインしてください。", "success");
         }
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
-          createLocalAccount(id, name, role);
-          return;
-        }
-
         setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }
@@ -949,15 +911,12 @@
 
       if (inputProblem) {
         setAuthMessage(`ログインできませんでした。${inputProblem}`, "error");
-        loginId.reportValidity();
+        accountPassword.reportValidity();
         return;
       }
 
-      const id = normalizeLoginId(loginId.value);
-      if (!isValidLoginId(id)) {
-        setAuthMessage("ログインIDは6〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
-        return;
-      }
+      const id = getPasswordCredential();
+      const password = id;
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -965,17 +924,12 @@
       try {
         const { error } = await appClient.auth.signInWithPassword({
           email: loginIdToEmail(id),
-          password: id
+          password
         });
 
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
-            signInLocalAccount(id);
-            return;
-          }
-
           setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -983,11 +937,6 @@
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
-          signInLocalAccount(id);
-          return;
-        }
-
         setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }

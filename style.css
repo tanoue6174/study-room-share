@@ -104,6 +104,15 @@ main {
   justify-content: flex-end;
 }
 
+label[for="account-role"],
+#account-role,
+#account-role + .field-help,
+label[for="login-id"],
+#login-id,
+#login-id + .field-help {
+  display: none;
+}
+
 .hero {
   min-height: 62vh;
   display: grid;

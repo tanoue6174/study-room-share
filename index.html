@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ | トップ</title>
-  <link rel="stylesheet" href="style.css?v=20260704-classroom">
+  <link rel="stylesheet" href="style.css?v=20260704-rooms">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -23,14 +23,14 @@
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">学校の自習をもっと使いやすくするアプリ</p>
-        <h1>友達の勉強場所と空き教室が分かる、自習サポートアプリ</h1>
+        <h1>先生が登録した自習室を、生徒がすぐに確認できる</h1>
         <p class="lead">
-          テスト期間中に、どの教室が使えるのか、誰がどこで勉強しているのかを分かりやすく共有します。
-          生徒が自習場所を選びやすく、先生が教室利用を管理しやすくなることを目指します。
+          アカウントを作成してログインすると、先生は自習室を登録できます。
+          生徒は登録された自習室をリストで確認し、自分に合った場所を選べます。
         </p>
         <div class="actions">
-          <a class="button primary" href="features.html">機能を見る</a>
-          <a class="button secondary" href="use-cases.html">使い方を見る</a>
+          <a class="button primary" href="#app-section">ログインして使う</a>
+          <a class="button secondary" href="features.html">機能を見る</a>
         </div>
       </div>
     </section>
@@ -38,80 +38,118 @@
     <section class="section">
       <div class="section-heading">
         <p class="eyebrow">Purpose</p>
-        <h2>このアプリを作る理由</h2>
+        <h2>教室の空き状況を分かりやすくする</h2>
       </div>
       <div class="two-column">
         <article class="panel">
-          <h3>生徒の迷いを減らす</h3>
+          <h3>先生向け</h3>
           <p>
-            どの教室が空いているのか、友達がどこにいるのかが分かると、自習を始めるまでの時間を短くできます。
-            「自分も勉強しよう」と思えるきっかけにもなります。
+            自習に使える教室、時間、人数、メモを登録できます。
+            登録した情報は、生徒側の一覧にすぐ表示されます。
           </p>
         </article>
         <article class="panel">
-          <h3>先生の確認作業を減らす</h3>
+          <h3>生徒向け</h3>
           <p>
-            生徒の希望人数や利用予定を一覧で確認できるため、教室を開ける判断がしやすくなります。
-            紙や口頭で集める手間も減らせます。
+            ログインすると、先生が登録した自習室を一覧で確認できます。
+            場所、時間、人数の目安を見て、自習場所を選べます。
           </p>
         </article>
       </div>
     </section>
 
-    <section class="section highlight">
-      <div>
-        <p class="eyebrow">Goal</p>
-        <h2>自習しやすい環境をつくる</h2>
-      </div>
-      <p>
-        このアプリは、空いている教室や友達のいる場所を分かりやすく表示します。
-        生徒が自分に合った自習場所を選びやすくするためのものです。
-        先生にとっても、利用人数や希望時間を確認しやすくなり、教室の準備や管理を進めやすくなります。
-      </p>
-    </section>
-
-    <section class="section board-section" aria-labelledby="board-title">
+    <section class="section app-section" id="app-section" aria-labelledby="app-title">
       <div class="section-heading">
-        <p class="eyebrow">Board</p>
-        <h2 id="board-title">掲示板</h2>
-        <p class="board-intro">自習場所の相談や、空き教室の情報共有に使えます。</p>
+        <p class="eyebrow">App</p>
+        <h2 id="app-title">自習室管理</h2>
+        <p class="app-intro">アカウント作成時に「先生」または「生徒」を選んでください。</p>
       </div>
 
-      <div class="auth-panel" aria-labelledby="auth-title">
+      <div class="auth-panel" id="auth-panel">
         <div>
-          <h3 id="auth-title">ログイン</h3>
+          <h3>ログイン</h3>
           <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
         </div>
         <form class="auth-form" id="auth-form">
-          <label class="auth-field" for="auth-email">メールアドレス</label>
-          <input class="auth-field" id="auth-email" name="email" type="text" autocomplete="username" placeholder="メールアドレス" required>
+          <label for="display-name">名前</label>
+          <input id="display-name" name="display-name" type="text" maxlength="40" autocomplete="name">
 
-          <label class="auth-field" for="auth-password">パスワード</label>
-          <input class="auth-field" id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password">
+          <label for="account-role">登録区分</label>
+          <select id="account-role" name="account-role">
+            <option value="student">生徒</option>
+            <option value="teacher">先生</option>
+          </select>
+
+          <label for="auth-email">メールアドレス</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" required>
+
+          <label for="auth-password">パスワード</label>
+          <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
 
           <div class="auth-actions">
-            <button class="button auth-button-strong" id="signup-button" type="button">新規登録</button>
-            <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
+            <button class="button primary" id="signup-button" type="button">アカウント作成</button>
+            <button class="button auth-button-muted" id="signin-button" type="submit">ログイン</button>
             <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
       </div>
 
-      <div class="board-layout">
-        <form class="board-form" id="post-form">
-          <label for="post-name">名前</label>
-          <input id="post-name" name="name" type="text" maxlength="40" autocomplete="name" required disabled>
+      <div class="role-summary" id="role-summary" hidden>
+        <div>
+          <p class="eyebrow">Dashboard</p>
+          <h3 id="dashboard-title">自習室リスト</h3>
+        </div>
+        <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
+      </div>
 
-          <label for="post-body">投稿内容</label>
-          <textarea id="post-body" name="body" rows="5" maxlength="1000" required disabled></textarea>
+      <div class="room-layout">
+        <form class="room-form" id="room-form" hidden>
+          <h3>自習室を登録</h3>
 
-          <button class="button primary board-submit" id="post-submit" type="submit" disabled>投稿する</button>
-          <p class="board-message" id="post-message" role="status" aria-live="polite"></p>
+          <label for="room-name">教室名</label>
+          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
+
+          <label for="room-location">場所</label>
+          <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
+
+          <div class="form-grid">
+            <div>
+              <label for="available-date">日付</label>
+              <input id="available-date" name="available-date" type="date" required>
+            </div>
+            <div>
+              <label for="capacity">人数目安</label>
+              <input id="capacity" name="capacity" type="number" min="1" max="200" value="20" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <label for="start-time">開始</label>
+              <input id="start-time" name="start-time" type="time" required>
+            </div>
+            <div>
+              <label for="end-time">終了</label>
+              <input id="end-time" name="end-time" type="time" required>
+            </div>
+          </div>
+
+          <label for="room-note">メモ</label>
+          <textarea id="room-note" name="room-note" rows="4" maxlength="300" placeholder="例: 静かに自習したい人向け"></textarea>
+
+          <button class="button primary room-submit" id="room-submit" type="submit">登録する</button>
+          <p class="room-message" id="room-message" role="status" aria-live="polite"></p>
         </form>
 
-        <div class="post-list" id="post-list" aria-live="polite">
-          <p class="empty-posts">投稿を読み込んでいます。</p>
+        <div class="room-list-panel">
+          <div class="list-toolbar">
+            <h3>使える自習室</h3>
+            <button class="button auth-button-muted" id="refresh-rooms" type="button">更新</button>
+          </div>
+          <div class="room-list" id="room-list" aria-live="polite">
+            <p class="empty-rooms">ログインすると自習室リストを確認できます。</p>
+          </div>
         </div>
       </div>
     </section>
@@ -124,37 +162,46 @@
   <script>
     const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
-    const PRESENTATION_LOGIN_NAME = "たのうえ";
-    const PRESENTATION_LOGIN_EMAIL = "demo-user@example.invalid";
-    const PRESENTATION_LOGIN_PASSWORD = "DEMO_PASSWORD_REDACTED";
 
-    const boardClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const appClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
     const authForm = document.getElementById("auth-form");
+    const displayName = document.getElementById("display-name");
+    const accountRole = document.getElementById("account-role");
     const authEmail = document.getElementById("auth-email");
     const authPassword = document.getElementById("auth-password");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
-    const authFields = document.querySelectorAll(".auth-field");
     const signupButton = document.getElementById("signup-button");
     const signinButton = document.getElementById("signin-button");
     const signoutButton = document.getElementById("signout-button");
-    const postForm = document.getElementById("post-form");
-    const postName = document.getElementById("post-name");
-    const postBody = document.getElementById("post-body");
-    const postSubmit = document.getElementById("post-submit");
-    const postMessage = document.getElementById("post-message");
-    const postList = document.getElementById("post-list");
-    let currentUser = null;
-    let isPresentationMode = false;
+    const roleSummary = document.getElementById("role-summary");
+    const dashboardTitle = document.getElementById("dashboard-title");
+    const dashboardNote = document.getElementById("dashboard-note");
+    const roomForm = document.getElementById("room-form");
+    const roomName = document.getElementById("room-name");
+    const roomLocation = document.getElementById("room-location");
+    const availableDate = document.getElementById("available-date");
+    const startTime = document.getElementById("start-time");
+    const endTime = document.getElementById("end-time");
+    const capacity = document.getElementById("capacity");
+    const roomNote = document.getElementById("room-note");
+    const roomSubmit = document.getElementById("room-submit");
+    const roomMessage = document.getElementById("room-message");
+    const roomList = document.getElementById("room-list");
+    const refreshRooms = document.getElementById("refresh-rooms");
 
-    function setMessage(text, type) {
-      postMessage.textContent = text;
-      postMessage.dataset.type = type || "";
-    }
+    let currentUser = null;
+    let currentProfile = null;
 
     function setAuthMessage(text, type) {
       authMessage.textContent = text;
       authMessage.dataset.type = type || "";
+    }
+
+    function setRoomMessage(text, type) {
+      roomMessage.textContent = text;
+      roomMessage.dataset.type = type || "";
     }
 
     function setAuthLoading(isLoading) {
@@ -163,197 +210,180 @@
       signoutButton.disabled = isLoading;
     }
 
-    function isPresentationLoginName(value) {
-      return value.trim() === PRESENTATION_LOGIN_NAME;
+    function setRoomLoading(isLoading) {
+      roomSubmit.disabled = isLoading;
+      refreshRooms.disabled = isLoading;
     }
 
-    function resolveLoginInput() {
-      const emailInput = authEmail.value.trim();
-      const isPresentationLogin = isPresentationLoginName(emailInput);
-
-      return {
-        email: isPresentationLogin ? PRESENTATION_LOGIN_EMAIL : emailInput,
-        password: isPresentationLogin ? PRESENTATION_LOGIN_PASSWORD : authPassword.value,
-        isPresentationLogin
-      };
+    function roleLabel(role) {
+      return role === "teacher" ? "先生" : "生徒";
     }
 
-    function isValidEmail(value) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    function renderLoggedOut() {
+      currentUser = null;
+      currentProfile = null;
+      authStatus.textContent = "ログインしていません。";
+      roleSummary.hidden = true;
+      roomForm.hidden = true;
+      signoutButton.hidden = true;
+      signupButton.hidden = false;
+      signinButton.hidden = false;
+      displayName.disabled = false;
+      accountRole.disabled = false;
+      authEmail.disabled = false;
+      authPassword.disabled = false;
+      roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
     }
 
-    function validateAuthInput(allowPresentationLogin) {
-      const emailInput = authEmail.value.trim();
+    function renderLoggedIn(user, profile) {
+      currentUser = user;
+      currentProfile = profile;
+      const role = profile?.role || "student";
+      const name = profile?.display_name || user.email;
 
-      if (allowPresentationLogin && isPresentationLoginName(emailInput)) {
-        authEmail.setCustomValidity("");
-        authPassword.setCustomValidity("");
-        return true;
-      }
+      authStatus.textContent = `${name} さん（${roleLabel(role)}）でログイン中です。`;
+      signoutButton.hidden = false;
+      signupButton.hidden = true;
+      signinButton.hidden = true;
+      displayName.disabled = true;
+      accountRole.disabled = true;
+      authEmail.disabled = true;
+      authPassword.disabled = true;
+      roleSummary.hidden = false;
+      roomForm.hidden = role !== "teacher";
 
-      authEmail.setCustomValidity(isValidEmail(emailInput) ? "" : "メールアドレスを入力してください。");
-      authPassword.setCustomValidity(authPassword.value ? "" : "パスワードを入力してください。");
-
-      return authForm.reportValidity();
+      dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
+      dashboardNote.textContent = role === "teacher"
+        ? "自習に使える教室を登録できます。登録内容は生徒の一覧に表示されます。"
+        : "先生が登録した自習室を確認できます。";
     }
 
-    function renderLoginRequired() {
-      postList.innerHTML = "";
-      const empty = document.createElement("p");
-      empty.className = "empty-posts";
-      empty.textContent = "掲示板を使うにはログインしてください。";
-      postList.appendChild(empty);
-    }
+    function renderRooms(rooms) {
+      roomList.innerHTML = "";
 
-    function updateAuthUI(user) {
-      currentUser = user || null;
-      const isLoggedIn = Boolean(currentUser);
-
-      authStatus.textContent = isLoggedIn
-        ? `${currentUser.email} でログイン中です。`
-        : "ログインしていません。";
-      authEmail.disabled = isLoggedIn;
-      authPassword.disabled = isLoggedIn;
-      authFields.forEach((field) => {
-        field.hidden = isLoggedIn;
-      });
-      signupButton.hidden = isLoggedIn;
-      signinButton.hidden = isLoggedIn;
-      signoutButton.hidden = !isLoggedIn;
-      signupButton.classList.toggle("auth-button-strong", !isLoggedIn);
-      signupButton.classList.toggle("auth-button-muted", isLoggedIn);
-      signinButton.classList.toggle("auth-button-strong", !isLoggedIn);
-      signinButton.classList.toggle("auth-button-muted", isLoggedIn);
-      signoutButton.classList.toggle("auth-button-strong", isLoggedIn);
-      signoutButton.classList.toggle("auth-button-muted", !isLoggedIn);
-      postName.disabled = !isLoggedIn;
-      postBody.disabled = !isLoggedIn;
-      postSubmit.disabled = !isLoggedIn;
-
-      if (!isLoggedIn) {
-        setMessage("ログインすると投稿できます。", "");
-        renderLoginRequired();
-      }
-    }
-
-    function renderPosts(posts) {
-      postList.innerHTML = "";
-
-      if (!posts.length) {
-        const empty = document.createElement("p");
-        empty.className = "empty-posts";
-        empty.textContent = "まだ投稿はありません。最初の投稿を書いてみましょう。";
-        postList.appendChild(empty);
+      if (!rooms.length) {
+        roomList.innerHTML = '<p class="empty-rooms">現在登録されている自習室はありません。</p>';
         return;
       }
 
-      posts.forEach((post) => {
+      rooms.forEach((room) => {
         const item = document.createElement("article");
-        item.className = "post-item";
+        item.className = "room-item";
 
-        const header = document.createElement("div");
-        header.className = "post-header";
-
-        const name = document.createElement("strong");
-        name.textContent = post.name;
-
-        const time = document.createElement("time");
-        time.dateTime = post.created_at;
-        time.textContent = new Date(post.created_at).toLocaleString("ja-JP", {
+        const date = new Date(`${room.available_date}T00:00:00`);
+        const formattedDate = date.toLocaleDateString("ja-JP", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit"
+          weekday: "short"
         });
 
-        const body = document.createElement("p");
-        body.textContent = post.body;
+        const title = document.createElement("h4");
+        title.textContent = room.room_name;
 
-        header.append(name, time);
-        item.append(header, body);
-        postList.appendChild(item);
+        const meta = document.createElement("p");
+        meta.className = "room-meta";
+        meta.textContent = `${formattedDate} ${room.start_time.slice(0, 5)}-${room.end_time.slice(0, 5)} / ${room.location} / ${room.capacity}人まで`;
+
+        const note = document.createElement("p");
+        note.textContent = room.note || "メモはありません。";
+
+        item.append(title, meta, note);
+        roomList.appendChild(item);
       });
     }
 
-    async function loadPosts() {
+    async function fetchProfile(user) {
+      const { data, error } = await appClient
+        .from("profiles")
+        .select("id, display_name, role")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && data) {
+        return data;
+      }
+
+      const fallbackProfile = {
+        id: user.id,
+        display_name: user.user_metadata?.display_name || user.email,
+        role: user.user_metadata?.role || "student"
+      };
+
+      await appClient.from("profiles").upsert(fallbackProfile);
+      return fallbackProfile;
+    }
+
+    async function loadRooms() {
       if (!currentUser) {
-        renderLoginRequired();
+        roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
         return;
       }
 
-      const { data, error } = await boardClient
-        .from("posts")
-        .select("id, name, body, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data, error } = await appClient
+        .from("study_rooms")
+        .select("id, room_name, location, available_date, start_time, end_time, capacity, note, created_at")
+        .order("available_date", { ascending: true })
+        .order("start_time", { ascending: true });
 
       if (error) {
-        setMessage("投稿を読み込めませんでした。Supabaseの設定を確認してください。", "error");
-        renderPosts([]);
+        roomList.innerHTML = '<p class="empty-rooms">自習室を読み込めませんでした。Supabaseのテーブル設定を確認してください。</p>';
         return;
       }
 
-      renderPosts(data || []);
+      renderRooms(data || []);
     }
 
     async function handleSignUp() {
-      if (!validateAuthInput(false)) {
+      if (!authForm.reportValidity()) {
         return;
       }
 
       const email = authEmail.value.trim();
       const password = authPassword.value;
-
-      if (!email || !password) {
-        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
-        return;
-      }
+      const name = displayName.value.trim() || email;
+      const role = accountRole.value;
 
       setAuthLoading(true);
       setAuthMessage("", "");
 
-      const { data, error } = await boardClient.auth.signUp({ email, password });
+      const { data, error } = await appClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: name,
+            role
+          }
+        }
+      });
 
       setAuthLoading(false);
 
       if (error) {
-        setAuthMessage(`新規登録できませんでした: ${error.message}`, "error");
+        setAuthMessage(`アカウントを作成できませんでした: ${error.message}`, "error");
         return;
       }
 
       if (data.session) {
-        setAuthMessage("新規登録してログインしました。", "success");
+        setAuthMessage("アカウントを作成してログインしました。", "success");
       } else {
         setAuthMessage("確認メールを送信しました。メール内のリンクを開いて登録を完了してください。", "success");
       }
     }
 
     async function handleSignIn() {
-      if (!validateAuthInput(true)) {
-        return;
-      }
-
-      const { email, password, isPresentationLogin } = resolveLoginInput();
-
-      if (!email || !password) {
-        setAuthMessage("メールアドレスとパスワードを入力してください。", "error");
-        return;
-      }
-
-      if (isPresentationLogin) {
-        isPresentationMode = true;
-        authPassword.value = "";
-        updateAuthUI({ email: PRESENTATION_LOGIN_NAME });
-        setAuthMessage("発表用ログインでログインしました。", "success");
-        await loadPosts();
+      if (!authEmail.reportValidity() || !authPassword.reportValidity()) {
         return;
       }
 
       setAuthLoading(true);
       setAuthMessage("", "");
 
-      const { error } = await boardClient.auth.signInWithPassword({ email, password });
+      const { error } = await appClient.auth.signInWithPassword({
+        email: authEmail.value.trim(),
+        password: authPassword.value
+      });
 
       setAuthLoading(false);
 
@@ -362,24 +392,15 @@
         return;
       }
 
-      isPresentationMode = false;
       authPassword.value = "";
-      setAuthMessage(isPresentationLogin ? "発表用ログインでログインしました。" : "ログインしました。", "success");
+      setAuthMessage("ログインしました。", "success");
     }
 
     async function handleSignOut() {
-      if (isPresentationMode) {
-        isPresentationMode = false;
-        postForm.reset();
-        updateAuthUI(null);
-        setAuthMessage("ログアウトしました。", "success");
-        return;
-      }
-
       setAuthLoading(true);
       setAuthMessage("", "");
 
-      const { error } = await boardClient.auth.signOut();
+      const { error } = await appClient.auth.signOut();
 
       setAuthLoading(false);
 
@@ -388,81 +409,86 @@
         return;
       }
 
-      postForm.reset();
       setAuthMessage("ログアウトしました。", "success");
+      renderLoggedOut();
+    }
+
+    async function handleRoomSubmit(event) {
+      event.preventDefault();
+
+      if (currentProfile?.role !== "teacher") {
+        setRoomMessage("先生アカウントだけが自習室を登録できます。", "error");
+        return;
+      }
+
+      if (!roomForm.reportValidity()) {
+        return;
+      }
+
+      if (startTime.value >= endTime.value) {
+        setRoomMessage("終了時間は開始時間より後にしてください。", "error");
+        return;
+      }
+
+      setRoomLoading(true);
+      setRoomMessage("", "");
+
+      const { error } = await appClient.from("study_rooms").insert({
+        room_name: roomName.value.trim(),
+        location: roomLocation.value.trim(),
+        available_date: availableDate.value,
+        start_time: startTime.value,
+        end_time: endTime.value,
+        capacity: Number(capacity.value),
+        note: roomNote.value.trim(),
+        created_by: currentUser.id
+      });
+
+      setRoomLoading(false);
+
+      if (error) {
+        setRoomMessage(`登録できませんでした: ${error.message}`, "error");
+        return;
+      }
+
+      roomForm.reset();
+      capacity.value = "20";
+      setRoomMessage("自習室を登録しました。", "success");
+      await loadRooms();
+    }
+
+    async function handleSession(session) {
+      if (!session?.user) {
+        renderLoggedOut();
+        return;
+      }
+
+      const profile = await fetchProfile(session.user);
+      renderLoggedIn(session.user, profile);
+      await loadRooms();
     }
 
     signupButton.addEventListener("click", handleSignUp);
-    authEmail.addEventListener("input", () => {
-      authEmail.setCustomValidity("");
-      authPassword.setCustomValidity("");
-    });
-    authPassword.addEventListener("input", () => {
-      authPassword.setCustomValidity("");
-    });
     authForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       await handleSignIn();
     });
     signoutButton.addEventListener("click", handleSignOut);
+    roomForm.addEventListener("submit", handleRoomSubmit);
+    refreshRooms.addEventListener("click", loadRooms);
 
-    postForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      if (!currentUser) {
-        setMessage("投稿するにはログインしてください。", "error");
-        return;
-      }
-
-      const name = postName.value.trim();
-      const body = postBody.value.trim();
-
-      if (!name || !body) {
-        setMessage("名前と投稿内容を入力してください。", "error");
-        return;
-      }
-
-      postSubmit.disabled = true;
-      postSubmit.textContent = "投稿中...";
-      setMessage("", "");
-
-      const { error } = await boardClient
-        .from("posts")
-        .insert({ name, body });
-
-      postSubmit.disabled = false;
-      postSubmit.textContent = "投稿する";
-
-      if (error) {
-        setMessage("投稿できませんでした。少し時間をおいてもう一度お試しください。", "error");
-        return;
-      }
-
-      postForm.reset();
-      setMessage("投稿しました。", "success");
-      await loadPosts();
+    appClient.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
     });
 
-    boardClient.auth.onAuthStateChange((_event, session) => {
-      if (isPresentationMode) {
-        return;
-      }
-
-      updateAuthUI(session?.user);
-      if (session?.user) {
-        loadPosts();
-      }
-    });
-
-    async function initAuth() {
-      const { data } = await boardClient.auth.getSession();
-      updateAuthUI(data.session?.user);
-      if (data.session?.user) {
-        await loadPosts();
-      }
+    async function initApp() {
+      const today = new Date().toISOString().slice(0, 10);
+      availableDate.value = today;
+      const { data } = await appClient.auth.getSession();
+      await handleSession(data.session);
     }
 
-    initAuth();
+    initApp();
   </script>
 </body>
 </html>

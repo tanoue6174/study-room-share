@@ -261,7 +261,7 @@ p {
   color: #dbe7f2;
 }
 
-.board-intro {
+.app-intro {
   color: var(--muted);
 }
 
@@ -294,7 +294,8 @@ p {
   font-weight: 800;
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -304,7 +305,8 @@ p {
   font: inherit;
 }
 
-.auth-form input:focus {
+.auth-form input:focus,
+.auth-form select:focus {
   outline: 3px solid rgba(47, 111, 237, 0.18);
   border-color: var(--blue);
 }
@@ -347,15 +349,36 @@ p {
   color: var(--red);
 }
 
-.board-layout {
+.role-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eaf2ff;
+}
+
+.role-summary h3 {
+  margin-bottom: 0;
+}
+
+.role-summary p:last-child {
+  color: #173b78;
+  font-weight: 700;
+}
+
+.room-layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
   gap: 16px;
   align-items: start;
 }
 
-.board-form,
-.post-list {
+.room-form,
+.room-list-panel {
   min-height: 100%;
   padding: 22px;
   border: 1px solid var(--line);
@@ -364,18 +387,18 @@ p {
   box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
 }
 
-.board-form {
+.room-form {
   display: grid;
   gap: 10px;
 }
 
-.board-form label {
+.room-form label {
   color: #173b78;
   font-weight: 800;
 }
 
-.board-form input,
-.board-form textarea {
+.room-form input,
+.room-form textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -385,13 +408,19 @@ p {
   font: inherit;
 }
 
-.board-form input:focus,
-.board-form textarea:focus {
+.room-form input:focus,
+.room-form textarea:focus {
   outline: 3px solid rgba(47, 111, 237, 0.18);
   border-color: var(--blue);
 }
 
-.board-submit {
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.room-submit {
   width: 100%;
   margin-top: 6px;
   border: 0;
@@ -399,61 +428,71 @@ p {
   font: inherit;
 }
 
-.board-submit:disabled {
+.room-submit:disabled {
   cursor: progress;
   opacity: 0.72;
 }
 
-.board-message {
+.room-message {
   min-height: 28px;
   color: var(--muted);
   font-weight: 700;
 }
 
-.board-message[data-type="success"] {
+.room-message[data-type="success"] {
   color: var(--green);
 }
 
-.board-message[data-type="error"] {
+.room-message[data-type="error"] {
   color: var(--red);
 }
 
-.post-list {
+.room-list {
   display: grid;
   gap: 12px;
 }
 
-.post-item {
+.list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.list-toolbar h3 {
+  margin-bottom: 0;
+}
+
+.list-toolbar button {
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font: inherit;
+}
+
+.room-item {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfdff;
 }
 
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
+.room-item h4 {
+  margin: 0 0 6px;
+  font-size: 19px;
+}
+
+.room-item p {
+  overflow-wrap: anywhere;
+}
+
+.room-meta {
   margin-bottom: 8px;
+  color: #173b78;
+  font-weight: 800;
 }
 
-.post-header strong {
-  overflow-wrap: anywhere;
-}
-
-.post-header time {
-  flex: 0 0 auto;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.post-item p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.empty-posts {
+.empty-rooms {
   color: var(--muted);
 }
 
@@ -512,11 +551,14 @@ tr:last-child td {
   .steps,
   .highlight,
   .auth-panel,
-  .board-layout {
+  .role-summary,
+  .room-layout,
+  .form-grid {
     grid-template-columns: 1fr;
   }
 
-  .post-header {
+  .role-summary,
+  .list-toolbar {
     align-items: flex-start;
     flex-direction: column;
   }

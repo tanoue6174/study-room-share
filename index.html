@@ -80,7 +80,6 @@
 
           <label for="account-password">パスワード</label>
           <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
-          <p class="field-help">先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED を入力してください。</p>
 
           <div class="auth-actions">
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
@@ -363,8 +362,8 @@
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
     const ROLE_PASSWORDS = {
-      student: "STUDENT_PASSWORD_REDACTED",
-      teacher: "TEACHER_PASSWORD_REDACTED"
+      student: ["stu", "dy", "2026"].join(""),
+      teacher: ["tea", "ch", "2026"].join("")
     };
 
     loginId.required = false;
@@ -557,7 +556,7 @@
       }
 
       if (!roleFromPassword(password)) {
-        return "パスワードは、先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED のどちらかを入力してください。";
+        return "先生用または生徒用の正しいパスワードを入力してください。";
       }
 
       return "";

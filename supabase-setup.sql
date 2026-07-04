@@ -29,6 +29,7 @@ alter table public.study_rooms enable row level security;
 drop policy if exists "Users can read profiles" on public.profiles;
 drop policy if exists "Users can create own profile" on public.profiles;
 drop policy if exists "Users can update own profile" on public.profiles;
+drop policy if exists "Teachers can read profiles" on public.profiles;
 drop policy if exists "Logged in users can read study rooms" on public.study_rooms;
 drop policy if exists "Teachers can create study rooms" on public.study_rooms;
 drop policy if exists "Teachers can update own study rooms" on public.study_rooms;
@@ -38,20 +39,26 @@ create policy "Users can read profiles"
 on public.profiles
 for select
 to authenticated
-using (true);
+using (id = auth.uid());
 
 create policy "Users can create own profile"
 on public.profiles
 for insert
 to authenticated
-with check (id = auth.uid());
+with check (
+  id = auth.uid()
+  and role = 'student'
+);
 
 create policy "Users can update own profile"
 on public.profiles
 for update
 to authenticated
 using (id = auth.uid())
-with check (id = auth.uid());
+with check (
+  id = auth.uid()
+  and role = 'student'
+);
 
 create policy "Logged in users can read study rooms"
 on public.study_rooms

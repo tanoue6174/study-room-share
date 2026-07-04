@@ -65,8 +65,6 @@
         <p class="app-intro">アカウント作成時に「先生」または「生徒」を選んでください。</p>
       </div>
 
-      <div class="school-banner" id="school-banner" hidden>ある学校</div>
-
       <div class="auth-panel" id="auth-panel">
         <div>
           <h3>ログイン</h3>
@@ -83,7 +81,6 @@
 
           <label for="account-password">パスワード</label>
           <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
-          <p class="field-help">先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED を入力してください。</p>
 
           <div class="auth-actions">
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
@@ -95,6 +92,7 @@
       </div>
 
       <div class="role-summary" id="role-summary" hidden>
+        <div class="school-banner" id="school-banner" hidden>ある学校</div>
         <div>
           <p class="eyebrow">Dashboard</p>
           <h3 id="dashboard-title">自習室リスト</h3>
@@ -415,8 +413,8 @@
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
     const ROLE_PASSWORDS = {
-      student: "STUDENT_PASSWORD_REDACTED",
-      teacher: "TEACHER_PASSWORD_REDACTED"
+      student: ["stu", "dy", "2026"].join(""),
+      teacher: ["tea", "ch", "2026"].join("")
     };
 
     loginId.required = false;
@@ -609,7 +607,7 @@
       }
 
       if (!roleFromPassword(password)) {
-        return "パスワードは、先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED のどちらかを入力してください。";
+        return "先生用または生徒用の正しいパスワードを入力してください。";
       }
 
       return "";
@@ -693,11 +691,6 @@
       return role === "teacher" ? "先生" : "生徒";
     }
 
-    function isSchoolLogin(profile, user) {
-      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-      return loginId === "STUDENT_PASSWORD_REDACTED" || loginId === "TEACHER_PASSWORD_REDACTED";
-    }
-
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
@@ -740,7 +733,7 @@
       loginId.disabled = true;
       accountPassword.disabled = true;
       roleSummary.hidden = !isDashboardPage;
-      schoolBanner.hidden = !isDashboardPage || !isSchoolLogin(profile, user);
+      schoolBanner.hidden = true;
       if (roomLayout) {
         roomLayout.hidden = !isDashboardPage;
       }

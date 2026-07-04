@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ | トップ</title>
-  <link rel="stylesheet" href="style.css?v=20260704-rooms">
+  <link rel="stylesheet" href="style.css?v=20260704-dashboard">
 </head>
-<body>
-  <header class="site-header">
+<body class="dashboard-page">
+  <header class="site-header" hidden>
     <nav class="nav" aria-label="メインナビゲーション">
       <a class="brand" href="index.html">Study Room Share</a>
       <div class="nav-links">
@@ -976,6 +976,9 @@
     async function handleSignOut() {
       if (!appClient) {
         renderLoggedOut();
+        if (isDashboardPage) {
+          window.location.href = "index.html";
+        }
         return;
       }
 
@@ -994,6 +997,9 @@
 
       setAuthMessage("ログアウトしました。", "success");
       renderLoggedOut();
+      if (isDashboardPage) {
+        window.location.href = "index.html";
+      }
     }
 
     async function handleRoomSubmit(event) {
@@ -1134,6 +1140,7 @@
         }
         renderLoggedOut();
         setAuthMessage("ログインすると、このページで自習室を登録・確認できます。", "");
+        window.location.href = "index.html";
         return;
       }
 

@@ -376,6 +376,9 @@
 
     let currentUser = null;
     let currentProfile = null;
+    const LOCAL_SESSION_KEY = "study-room-share-local-session";
+    const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
+    const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
 
     function setAuthMessage(text, type) {
       authMessage.textContent = text;
@@ -391,6 +394,73 @@
       signupButton.disabled = isLoading;
       signinButton.disabled = isLoading;
       signoutButton.disabled = isLoading;
+    }
+
+    function readLocalJson(key, fallback) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+      } catch (_error) {
+        return fallback;
+      }
+    }
+
+    function writeLocalJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function isConnectionError(error) {
+      const message = String(error?.message || "").toLowerCase();
+      return message.includes("failed to fetch") || message.includes("network") || message.includes("load failed");
+    }
+
+    function createLocalUser(account) {
+      return {
+        id: `local-${account.login_id}`,
+        email: loginIdToEmail(account.login_id),
+        user_metadata: {
+          login_id: account.login_id,
+          display_name: account.display_name,
+          role: account.role
+        }
+      };
+    }
+
+    function createLocalSession(account) {
+      const session = {
+        user: createLocalUser(account),
+        profile: {
+          id: `local-${account.login_id}`,
+          login_id: account.login_id,
+          display_name: account.display_name,
+          role: account.role
+        }
+      };
+      writeLocalJson(LOCAL_SESSION_KEY, session);
+      return session;
+    }
+
+    function getLocalSession() {
+      return readLocalJson(LOCAL_SESSION_KEY, null);
+    }
+
+    function clearLocalSession() {
+      localStorage.removeItem(LOCAL_SESSION_KEY);
+    }
+
+    function getLocalAccounts() {
+      return readLocalJson(LOCAL_ACCOUNTS_KEY, {});
+    }
+
+    function saveLocalAccounts(accounts) {
+      writeLocalJson(LOCAL_ACCOUNTS_KEY, accounts);
+    }
+
+    function getLocalRooms() {
+      return readLocalJson(LOCAL_ROOMS_KEY, []);
+    }
+
+    function saveLocalRooms(rooms) {
+      writeLocalJson(LOCAL_ROOMS_KEY, rooms);
     }
 
     function normalizeLoginId(value) {
@@ -557,6 +627,44 @@
       });
     }
 
+    function finishLocalLogin(account, message) {
+      const session = createLocalSession(account);
+      renderLoggedIn(session.user, session.profile);
+      loadRooms();
+      setAuthMessage(message, "success");
+    }
+
+    function createLocalAccount(id, name, role) {
+      const accounts = getLocalAccounts();
+
+      if (accounts[id]) {
+        setAuthMessage("アカウントを作成できませんでした。理由: このログインIDはすでに使われています。", "error");
+        return;
+      }
+
+      const account = {
+        login_id: id,
+        display_name: name,
+        role
+      };
+
+      accounts[id] = account;
+      saveLocalAccounts(accounts);
+      finishLocalLogin(account, "Supabaseに接続できなかったため、この端末内にアカウントを作成してログインしました。");
+    }
+
+    function signInLocalAccount(id) {
+      const accounts = getLocalAccounts();
+      const account = accounts[id];
+
+      if (!account) {
+        setAuthMessage("ログインできませんでした。理由: この端末内にそのログインIDのアカウントがありません。先にアカウント作成をしてください。", "error");
+        return;
+      }
+
+      finishLocalLogin(account, "この端末内のアカウントでログインしました。");
+    }
+
     async function fetchProfile(user) {
       const { data, error } = await appClient
         .from("profiles")
@@ -582,6 +690,11 @@
     async function loadRooms() {
       if (!currentUser) {
         roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
+        return;
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        renderRooms(getLocalRooms());
         return;
       }
 
@@ -643,6 +756,11 @@
         setAuthLoading(false);
 
         if (error) {
+          if (isConnectionError(error)) {
+            createLocalAccount(id, name, role);
+            return;
+          }
+
           setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -654,6 +772,11 @@
         }
       } catch (error) {
         setAuthLoading(false);
+        if (isConnectionError(error)) {
+          createLocalAccount(id, name, role);
+          return;
+        }
+
         setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }
@@ -690,6 +813,11 @@
         setAuthLoading(false);
 
         if (error) {
+          if (isConnectionError(error)) {
+            signInLocalAccount(id);
+            return;
+          }
+
           setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
           return;
         }
@@ -697,6 +825,11 @@
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);
+        if (isConnectionError(error)) {
+          signInLocalAccount(id);
+          return;
+        }
+
         setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }
@@ -711,6 +844,7 @@
       setAuthMessage("", "");
 
       const { error } = await appClient.auth.signOut();
+      clearLocalSession();
 
       setAuthLoading(false);
 
@@ -747,6 +881,29 @@
 
       setRoomLoading(true);
       setRoomMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const rooms = getLocalRooms();
+        rooms.push({
+          id: Date.now(),
+          room_name: roomName.value.trim(),
+          location: roomLocation.value.trim(),
+          available_date: availableDate.value,
+          start_time: startTime.value,
+          end_time: endTime.value,
+          capacity: Number(capacity.value),
+          note: roomNote.value.trim(),
+          created_by: currentUser.id,
+          created_at: new Date().toISOString()
+        });
+        saveLocalRooms(rooms);
+        setRoomLoading(false);
+        roomForm.reset();
+        capacity.value = "20";
+        setRoomMessage("自習室を登録しました。", "success");
+        await loadRooms();
+        return;
+      }
 
       const { error } = await appClient.from("study_rooms").insert({
         room_name: roomName.value.trim(),
@@ -799,6 +956,13 @@
     async function initApp() {
       const today = new Date().toISOString().slice(0, 10);
       availableDate.value = today;
+
+      const localSession = getLocalSession();
+      if (localSession?.user && localSession?.profile) {
+        renderLoggedIn(localSession.user, localSession.profile);
+        await loadRooms();
+        return;
+      }
 
       if (!appClient) {
         renderLoggedOut();

@@ -86,7 +86,7 @@ main {
   color: #ffffff;
   background:
     linear-gradient(rgba(18, 31, 46, 0.72), rgba(18, 31, 46, 0.54)),
-    url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80");
+    url("https://images.unsplash.com/photo-1658200542476-68e8adf747ff?auto=format&fit=crop&w=1600&q=80");
   background-position: center;
   background-size: cover;
 }

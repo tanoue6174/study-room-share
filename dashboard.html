@@ -165,6 +165,9 @@
             <option value="">登録されている部屋はありません</option>
           </select>
 
+          <label for="request-date">希望日</label>
+          <input id="request-date" name="request-date" type="date" required>
+
           <label for="request-time">希望時間</label>
           <select id="request-time" name="request-time" size="6" required></select>
 
@@ -403,6 +406,7 @@
     const refreshRooms = document.getElementById("refresh-rooms");
     const requestForm = document.getElementById("request-form");
     const requestRoom = document.getElementById("request-room");
+    const requestDate = document.getElementById("request-date");
     const requestTime = document.getElementById("request-time");
     const requestSubmit = document.getElementById("request-submit");
     const requestMessage = document.getElementById("request-message");
@@ -645,6 +649,25 @@
       return rounded;
     }
 
+    function formatDateForInput(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatSelectedDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      return new Date(`${value}T00:00:00`).toLocaleDateString("ja-JP", {
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "short"
+      });
+    }
+
     function buildRequestTimeOptions() {
       requestTime.innerHTML = "";
       const start = roundUpToNextHalfHour(new Date());
@@ -654,8 +677,6 @@
         const option = document.createElement("option");
         option.value = time.toISOString();
         option.textContent = time.toLocaleString("ja-JP", {
-          month: "2-digit",
-          day: "2-digit",
           hour: "2-digit",
           minute: "2-digit"
         });
@@ -1100,9 +1121,15 @@
         return;
       }
 
+      if (!requestDate.value) {
+        setRequestMessage("希望日を選んでください。", "error");
+        return;
+      }
+
       const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
+      const selectedDate = formatSelectedDate(requestDate.value);
       const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
-      setRequestMessage(`${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+      setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
     }
 
     async function handleSession(session) {
@@ -1134,8 +1161,11 @@
     });
 
     async function initApp() {
-      const today = new Date().toISOString().slice(0, 10);
-      availableDate.value = today;
+      const today = formatDateForInput(new Date());
+      availableDate.value = "";
+      requestDate.value = "";
+      availableDate.min = today;
+      requestDate.min = today;
       buildRequestTimeOptions();
       updateRequestRoomOptions([]);
 

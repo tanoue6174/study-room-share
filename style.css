@@ -593,7 +593,8 @@ p {
   font-weight: 800;
 }
 
-.request-form select {
+.request-form select,
+.request-form input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -603,7 +604,8 @@ p {
   font: inherit;
 }
 
-.request-form select:focus {
+.request-form select:focus,
+.request-form input:focus {
   outline: 3px solid rgba(47, 111, 237, 0.18);
   border-color: var(--blue);
 }

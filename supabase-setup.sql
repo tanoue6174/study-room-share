@@ -1,9 +1,13 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  login_id text unique,
   display_name text not null,
   role text not null check (role in ('teacher', 'student')),
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles
+add column if not exists login_id text unique;
 
 create table if not exists public.study_rooms (
   id bigint generated always as identity primary key,

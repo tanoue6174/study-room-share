@@ -80,8 +80,8 @@
             <option value="teacher">先生</option>
           </select>
 
-          <label for="auth-email">メールアドレス</label>
-          <input id="auth-email" name="email" type="email" autocomplete="email" required>
+          <label for="login-id">ログインID</label>
+          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="4" maxlength="24" pattern="[A-Za-z0-9_-]+" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
 
           <label for="auth-password">パスワード</label>
           <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
@@ -168,7 +168,7 @@
     const authForm = document.getElementById("auth-form");
     const displayName = document.getElementById("display-name");
     const accountRole = document.getElementById("account-role");
-    const authEmail = document.getElementById("auth-email");
+    const loginId = document.getElementById("login-id");
     const authPassword = document.getElementById("auth-password");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
@@ -210,6 +210,18 @@
       signoutButton.disabled = isLoading;
     }
 
+    function normalizeLoginId(value) {
+      return value.trim().toLowerCase();
+    }
+
+    function isValidLoginId(value) {
+      return /^[a-z0-9_-]{4,24}$/.test(value);
+    }
+
+    function loginIdToEmail(value) {
+      return `${value}@study-room-share.local`;
+    }
+
     function setRoomLoading(isLoading) {
       roomSubmit.disabled = isLoading;
       refreshRooms.disabled = isLoading;
@@ -230,7 +242,7 @@
       signinButton.hidden = false;
       displayName.disabled = false;
       accountRole.disabled = false;
-      authEmail.disabled = false;
+      loginId.disabled = false;
       authPassword.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
     }
@@ -239,7 +251,7 @@
       currentUser = user;
       currentProfile = profile;
       const role = profile?.role || "student";
-      const name = profile?.display_name || user.email;
+      const name = profile?.display_name || profile?.login_id || user.email;
 
       authStatus.textContent = `${name} さん（${roleLabel(role)}）でログイン中です。`;
       signoutButton.hidden = false;
@@ -247,7 +259,7 @@
       signinButton.hidden = true;
       displayName.disabled = true;
       accountRole.disabled = true;
-      authEmail.disabled = true;
+      loginId.disabled = true;
       authPassword.disabled = true;
       roleSummary.hidden = false;
       roomForm.hidden = role !== "teacher";
@@ -296,7 +308,7 @@
     async function fetchProfile(user) {
       const { data, error } = await appClient
         .from("profiles")
-        .select("id, display_name, role")
+        .select("id, login_id, display_name, role")
         .eq("id", user.id)
         .single();
 
@@ -306,7 +318,8 @@
 
       const fallbackProfile = {
         id: user.id,
-        display_name: user.user_metadata?.display_name || user.email,
+        login_id: user.user_metadata?.login_id || user.email?.split("@")[0],
+        display_name: user.user_metadata?.display_name || user.user_metadata?.login_id || user.email,
         role: user.user_metadata?.role || "student"
       };
 
@@ -339,10 +352,16 @@
         return;
       }
 
-      const email = authEmail.value.trim();
+      const id = normalizeLoginId(loginId.value);
+      const email = loginIdToEmail(id);
       const password = authPassword.value;
-      const name = displayName.value.trim() || email;
+      const name = displayName.value.trim() || id;
       const role = accountRole.value;
+
+      if (!isValidLoginId(id)) {
+        setAuthMessage("ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
+        return;
+      }
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -352,6 +371,7 @@
         password,
         options: {
           data: {
+            login_id: id,
             display_name: name,
             role
           }
@@ -368,12 +388,18 @@
       if (data.session) {
         setAuthMessage("アカウントを作成してログインしました。", "success");
       } else {
-        setAuthMessage("確認メールを送信しました。メール内のリンクを開いて登録を完了してください。", "success");
+        setAuthMessage("アカウントを作成しました。ログインIDとパスワードでログインしてください。", "success");
       }
     }
 
     async function handleSignIn() {
-      if (!authEmail.reportValidity() || !authPassword.reportValidity()) {
+      if (!loginId.reportValidity() || !authPassword.reportValidity()) {
+        return;
+      }
+
+      const id = normalizeLoginId(loginId.value);
+      if (!isValidLoginId(id)) {
+        setAuthMessage("ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。", "error");
         return;
       }
 
@@ -381,7 +407,7 @@
       setAuthMessage("", "");
 
       const { error } = await appClient.auth.signInWithPassword({
-        email: authEmail.value.trim(),
+        email: loginIdToEmail(id),
         password: authPassword.value
       });
 

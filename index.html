@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ | トップ</title>
   <link rel="stylesheet" href="style.css?v=20260704-rooms">
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -161,9 +160,194 @@
     const SUPABASE_URL = "https://lifesqtmgtlqllvxibvp.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_owISEwRT-risowZ7sgXsRg_W2szefQ9";
 
-    const appClient = window.supabase
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
-      : null;
+    function createDirectSupabaseClient(url, key) {
+      const storageKey = "study-room-share-session";
+      const authUrl = `${url}/auth/v1`;
+      const restUrl = `${url}/rest/v1`;
+      const listeners = [];
+
+      function getStoredSession() {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey) || "null");
+        } catch (_error) {
+          return null;
+        }
+      }
+
+      function saveSession(session) {
+        if (session) {
+          localStorage.setItem(storageKey, JSON.stringify(session));
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+        listeners.forEach((listener) => listener("SIGNED_IN", session));
+      }
+
+      function authHeaders(useSession) {
+        const session = getStoredSession();
+        return {
+          apikey: key,
+          Authorization: `Bearer ${useSession && session?.access_token ? session.access_token : key}`,
+          "Content-Type": "application/json"
+        };
+      }
+
+      async function request(endpoint, options) {
+        try {
+          const response = await fetch(endpoint, options);
+          const text = await response.text();
+          const payload = text ? JSON.parse(text) : null;
+
+          if (!response.ok) {
+            return {
+              data: null,
+              error: {
+                status: response.status,
+                message: payload?.msg || payload?.message || payload?.error_description || payload?.error || response.statusText
+              }
+            };
+          }
+
+          return { data: payload, error: null };
+        } catch (error) {
+          return { data: null, error };
+        }
+      }
+
+      function buildSession(payload) {
+        if (!payload?.access_token) {
+          return null;
+        }
+
+        return {
+          access_token: payload.access_token,
+          refresh_token: payload.refresh_token,
+          user: payload.user
+        };
+      }
+
+      function table(name) {
+        const state = {
+          select: "*",
+          filters: [],
+          orders: []
+        };
+
+        const builder = {
+          select(columns) {
+            state.select = columns;
+            return builder;
+          },
+          eq(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`);
+            return builder;
+          },
+          order(column, options) {
+            const direction = options?.ascending === false ? "desc" : "asc";
+            state.orders.push(`${column}.${direction}`);
+            return builder;
+          },
+          async single() {
+            const result = await builder.then();
+            return {
+              data: Array.isArray(result.data) ? result.data[0] || null : result.data,
+              error: result.error || (Array.isArray(result.data) && result.data.length ? null : { message: "No rows returned" })
+            };
+          },
+          async insert(values) {
+            return request(`${restUrl}/${name}`, {
+              method: "POST",
+              headers: {
+                ...authHeaders(true),
+                Prefer: "return=representation"
+              },
+              body: JSON.stringify(values)
+            });
+          },
+          async upsert(values) {
+            return request(`${restUrl}/${name}?on_conflict=id`, {
+              method: "POST",
+              headers: {
+                ...authHeaders(true),
+                Prefer: "resolution=merge-duplicates,return=representation"
+              },
+              body: JSON.stringify(values)
+            });
+          },
+          async then(resolve) {
+            const params = [`select=${encodeURIComponent(state.select)}`, ...state.filters];
+            if (state.orders.length) {
+              params.push(`order=${encodeURIComponent(state.orders.join(","))}`);
+            }
+
+            const result = await request(`${restUrl}/${name}?${params.join("&")}`, {
+              method: "GET",
+              headers: authHeaders(true)
+            });
+
+            return resolve ? resolve(result) : result;
+          }
+        };
+
+        return builder;
+      }
+
+      return {
+        auth: {
+          async signUp({ email, password, options }) {
+            const { data, error } = await request(`${authUrl}/signup`, {
+              method: "POST",
+              headers: authHeaders(false),
+              body: JSON.stringify({
+                email,
+                password,
+                data: options?.data || {}
+              })
+            });
+
+            const session = buildSession(data);
+            if (session) {
+              saveSession(session);
+            }
+
+            return {
+              data: {
+                ...data,
+                session
+              },
+              error
+            };
+          },
+          async signInWithPassword({ email, password }) {
+            const { data, error } = await request(`${authUrl}/token?grant_type=password`, {
+              method: "POST",
+              headers: authHeaders(false),
+              body: JSON.stringify({ email, password })
+            });
+
+            const session = buildSession(data);
+            if (session) {
+              saveSession(session);
+            }
+
+            return { data, error };
+          },
+          async signOut() {
+            saveSession(null);
+            return { error: null };
+          },
+          async getSession() {
+            return { data: { session: getStoredSession() } };
+          },
+          onAuthStateChange(callback) {
+            listeners.push(callback);
+          }
+        },
+        from: table
+      };
+    }
+
+    const appClient = createDirectSupabaseClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
     const authForm = document.getElementById("auth-form");
     const displayName = document.getElementById("display-name");

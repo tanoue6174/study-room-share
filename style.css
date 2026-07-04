@@ -508,6 +508,79 @@ p {
   overflow-wrap: anywhere;
 }
 
+.request-panel {
+  margin-top: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
+}
+
+.request-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.request-heading h3 {
+  margin-bottom: 0;
+}
+
+.request-heading p:last-child {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.request-form {
+  display: grid;
+  gap: 10px;
+}
+
+.request-form label {
+  color: #173b78;
+  font-weight: 800;
+}
+
+.request-form select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+}
+
+.request-form select:focus {
+  outline: 3px solid rgba(47, 111, 237, 0.18);
+  border-color: var(--blue);
+}
+
+.request-submit {
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.request-message {
+  min-height: 28px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.request-message[data-type="success"] {
+  color: var(--green);
+}
+
+.request-message[data-type="error"] {
+  color: var(--red);
+}
+
 .room-meta {
   margin-bottom: 8px;
   color: #173b78;
@@ -580,7 +653,8 @@ tr:last-child td {
   }
 
   .role-summary,
-  .list-toolbar {
+  .list-toolbar,
+  .request-heading {
     align-items: flex-start;
     flex-direction: column;
   }

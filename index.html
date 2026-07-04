@@ -149,6 +149,29 @@
           </div>
         </div>
       </div>
+
+      <section class="request-panel" aria-labelledby="request-title">
+        <div class="request-heading">
+          <div>
+            <p class="eyebrow">Request</p>
+            <h3 id="request-title">要望する</h3>
+          </div>
+          <p>先生に、開けてほしい部屋と時間を伝えられます。</p>
+        </div>
+
+        <form class="request-form" id="request-form">
+          <label for="request-room">開けてほしい部屋</label>
+          <select id="request-room" name="request-room" required>
+            <option value="">登録されている部屋はありません</option>
+          </select>
+
+          <label for="request-time">希望時間</label>
+          <select id="request-time" name="request-time" size="6" required></select>
+
+          <button class="button primary request-submit" id="request-submit" type="submit">要望を送る</button>
+          <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
     </section>
   </main>
 
@@ -373,6 +396,11 @@
     const roomMessage = document.getElementById("room-message");
     const roomList = document.getElementById("room-list");
     const refreshRooms = document.getElementById("refresh-rooms");
+    const requestForm = document.getElementById("request-form");
+    const requestRoom = document.getElementById("request-room");
+    const requestTime = document.getElementById("request-time");
+    const requestSubmit = document.getElementById("request-submit");
+    const requestMessage = document.getElementById("request-message");
 
     let currentUser = null;
     let currentProfile = null;
@@ -388,6 +416,11 @@
     function setRoomMessage(text, type) {
       roomMessage.textContent = text;
       roomMessage.dataset.type = type || "";
+    }
+
+    function setRequestMessage(text, type) {
+      requestMessage.textContent = text;
+      requestMessage.dataset.type = type || "";
     }
 
     function setAuthLoading(isLoading) {
@@ -560,6 +593,57 @@
       refreshRooms.disabled = isLoading;
     }
 
+    function roundUpToNextHalfHour(date) {
+      const rounded = new Date(date);
+      rounded.setSeconds(0, 0);
+      const minutes = rounded.getMinutes();
+      const addMinutes = minutes === 0 || minutes === 30 ? 0 : minutes < 30 ? 30 - minutes : 60 - minutes;
+      rounded.setMinutes(minutes + addMinutes);
+      return rounded;
+    }
+
+    function buildRequestTimeOptions() {
+      requestTime.innerHTML = "";
+      const start = roundUpToNextHalfHour(new Date());
+
+      for (let index = 0; index < 48; index += 1) {
+        const time = new Date(start.getTime() + index * 30 * 60 * 1000);
+        const option = document.createElement("option");
+        option.value = time.toISOString();
+        option.textContent = time.toLocaleString("ja-JP", {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        requestTime.appendChild(option);
+      }
+    }
+
+    function updateRequestRoomOptions(rooms) {
+      requestRoom.innerHTML = "";
+
+      if (!rooms.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "登録されている部屋はありません";
+        requestRoom.appendChild(option);
+        requestRoom.disabled = true;
+        requestSubmit.disabled = true;
+        return;
+      }
+
+      rooms.forEach((room) => {
+        const option = document.createElement("option");
+        option.value = room.id;
+        option.textContent = room.location;
+        requestRoom.appendChild(option);
+      });
+
+      requestRoom.disabled = false;
+      requestSubmit.disabled = !currentUser;
+    }
+
     function roleLabel(role) {
       return role === "teacher" ? "先生" : "生徒";
     }
@@ -578,6 +662,8 @@
       accountRole.disabled = false;
       loginId.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
+      updateRequestRoomOptions([]);
+      setRequestMessage("", "");
     }
 
     function renderLoggedIn(user, profile) {
@@ -608,8 +694,11 @@
 
       if (!rooms.length) {
         roomList.innerHTML = '<p class="empty-rooms">現在登録されている自習室はありません。</p>';
+        updateRequestRoomOptions([]);
         return;
       }
+
+      updateRequestRoomOptions(rooms);
 
       rooms.forEach((room) => {
         const item = document.createElement("article");
@@ -719,6 +808,7 @@
     async function loadRooms() {
       if (!currentUser) {
         roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
+        updateRequestRoomOptions([]);
         return;
       }
 
@@ -735,6 +825,7 @@
 
       if (error) {
         roomList.innerHTML = '<p class="empty-rooms">自習室を読み込めませんでした。Supabaseのテーブル設定を確認してください。</p>';
+        updateRequestRoomOptions([]);
         return;
       }
 
@@ -958,6 +1049,24 @@
       await loadRooms();
     }
 
+    function handleRequestSubmit(event) {
+      event.preventDefault();
+
+      if (!currentUser) {
+        setRequestMessage("ログインすると要望を送れます。", "error");
+        return;
+      }
+
+      if (!requestRoom.value) {
+        setRequestMessage("現在選べる部屋はありません。", "error");
+        return;
+      }
+
+      const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
+      const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
+      setRequestMessage(`${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+    }
+
     async function handleSession(session) {
       if (!session?.user) {
         renderLoggedOut();
@@ -976,6 +1085,7 @@
     });
     signoutButton.addEventListener("click", handleSignOut);
     roomForm.addEventListener("submit", handleRoomSubmit);
+    requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);
 
     appClient.auth.onAuthStateChange((_event, session) => {
@@ -985,6 +1095,8 @@
     async function initApp() {
       const today = new Date().toISOString().slice(0, 10);
       availableDate.value = today;
+      buildRequestTimeOptions();
+      updateRequestRoomOptions([]);
       clearLocalSession();
       renderLoggedOut();
 

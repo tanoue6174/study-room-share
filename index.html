@@ -225,6 +225,15 @@
 
     function toJapaneseAuthError(error) {
       const message = String(error?.message || "").toLowerCase();
+      const status = error?.status;
+
+      if (status === 422) {
+        return "入力内容に問題があります。ログインIDがすでに使われているか、パスワードの条件を満たしていない可能性があります。";
+      }
+
+      if (status === 400) {
+        return "入力内容が正しくありません。ログインIDとパスワードを確認してください。";
+      }
 
       if (message.includes("already registered") || message.includes("already exists") || message.includes("user already")) {
         return "このログインIDはすでに使われています。別のログインIDにしてください。";
@@ -251,6 +260,28 @@
       }
 
       return "原因を特定できませんでした。ログインID、パスワード、Supabaseの設定を確認してください。";
+    }
+
+    function getAuthInputProblem() {
+      const id = normalizeLoginId(loginId.value);
+
+      if (!id) {
+        return "ログインIDが入力されていません。";
+      }
+
+      if (!isValidLoginId(id)) {
+        return "ログインIDは4〜24文字の英数字、ハイフン、アンダーバーで入力してください。";
+      }
+
+      if (!authPassword.value) {
+        return "パスワードが入力されていません。";
+      }
+
+      if (authPassword.value.length < 6) {
+        return "パスワードは6文字以上で入力してください。";
+      }
+
+      return "";
     }
 
     function toJapaneseDatabaseError(error) {
@@ -397,7 +428,11 @@
     }
 
     async function handleSignUp() {
-      if (!authForm.reportValidity()) {
+      const inputProblem = getAuthInputProblem();
+
+      if (inputProblem) {
+        setAuthMessage(`アカウントを作成できませんでした。${inputProblem}`, "error");
+        authForm.reportValidity();
         return;
       }
 
@@ -415,34 +450,44 @@
       setAuthLoading(true);
       setAuthMessage("", "");
 
-      const { data, error } = await appClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            login_id: id,
-            display_name: name,
-            role
+      try {
+        const { data, error } = await appClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              login_id: id,
+              display_name: name,
+              role
+            }
           }
+        });
+
+        setAuthLoading(false);
+
+        if (error) {
+          setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
+          return;
         }
-      });
 
-      setAuthLoading(false);
-
-      if (error) {
-        setAuthMessage(`アカウントを作成できませんでした。${toJapaneseAuthError(error)}`, "error");
-        return;
-      }
-
-      if (data.session) {
-        setAuthMessage("アカウントを作成してログインしました。", "success");
-      } else {
-        setAuthMessage("アカウントを作成しました。ログインIDとパスワードでログインしてください。", "success");
+        if (data.session) {
+          setAuthMessage("アカウントを作成してログインしました。", "success");
+        } else {
+          setAuthMessage("アカウントを作成しました。ログインIDとパスワードでログインしてください。", "success");
+        }
+      } catch (error) {
+        setAuthLoading(false);
+        setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
     }
 
     async function handleSignIn() {
-      if (!loginId.reportValidity() || !authPassword.reportValidity()) {
+      const inputProblem = getAuthInputProblem();
+
+      if (inputProblem) {
+        setAuthMessage(`ログインできませんでした。${inputProblem}`, "error");
+        loginId.reportValidity();
+        authPassword.reportValidity();
         return;
       }
 
@@ -455,20 +500,25 @@
       setAuthLoading(true);
       setAuthMessage("", "");
 
-      const { error } = await appClient.auth.signInWithPassword({
-        email: loginIdToEmail(id),
-        password: authPassword.value
-      });
+      try {
+        const { error } = await appClient.auth.signInWithPassword({
+          email: loginIdToEmail(id),
+          password: authPassword.value
+        });
 
-      setAuthLoading(false);
+        setAuthLoading(false);
 
-      if (error) {
-        setAuthMessage(`ログインできませんでした。${toJapaneseAuthError(error)}`, "error");
-        return;
+        if (error) {
+          setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
+          return;
+        }
+
+        authPassword.value = "";
+        setAuthMessage("ログインしました。", "success");
+      } catch (error) {
+        setAuthLoading(false);
+        setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
       }
-
-      authPassword.value = "";
-      setAuthMessage("ログインしました。", "success");
     }
 
     async function handleSignOut() {

@@ -80,9 +80,9 @@
             <option value="teacher">先生</option>
           </select>
 
-          <label for="registration-password">登録用パスワード</label>
-          <input id="registration-password" name="registration-password" type="password" autocomplete="new-password" placeholder="生徒: STUDENT_PASSWORD_REDACTED / 先生: TEACHER_PASSWORD_REDACTED">
-          <p class="field-help">アカウント作成のときだけ入力します。生徒は STUDENT_PASSWORD_REDACTED、先生は TEACHER_PASSWORD_REDACTED です。</p>
+          <label for="registration-password">パスワード</label>
+          <input id="registration-password" name="registration-password" type="password" autocomplete="new-password" placeholder="パスワードを入力">
+          <p class="field-help">先生は TEACHER_PASSWORD_REDACTED、生徒は STUDENT_PASSWORD_REDACTED だけ登録できます。</p>
 
           <label for="login-id">ログインID</label>
           <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" value="STUDENT_PASSWORD_REDACTED" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
@@ -418,7 +418,7 @@
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
-    const ROLE_REGISTRATION_PASSWORDS = {
+    const ROLE_PASSWORDS = {
       student: "STUDENT_PASSWORD_REDACTED",
       teacher: "TEACHER_PASSWORD_REDACTED"
     };
@@ -890,7 +890,7 @@
       const password = id;
       const name = displayName.value.trim() || id;
       const role = accountRole.value;
-      const expectedRegistrationPassword = ROLE_REGISTRATION_PASSWORDS[role];
+      const expectedRegistrationPassword = ROLE_PASSWORDS[role];
       const registrationPasswordValue = registrationPassword.value.trim();
 
       if (!isValidLoginId(id)) {
@@ -900,7 +900,7 @@
 
       if (registrationPasswordValue !== expectedRegistrationPassword) {
         const roleName = roleLabel(role);
-        setAuthMessage(`アカウントを作成できませんでした。理由: ${roleName}として登録するには、正しい登録用パスワードを入力してください。`, "error");
+        setAuthMessage(`アカウントを作成できませんでした。理由: ${roleName}として登録するには、正しいパスワードを入力してください。`, "error");
         registrationPassword.focus();
         return;
       }

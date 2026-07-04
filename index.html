@@ -73,16 +73,10 @@
           <label for="display-name">名前</label>
           <input id="display-name" name="display-name" type="text" maxlength="40" autocomplete="name">
 
-          <label for="account-role" aria-hidden="true"></label>
-          <select id="account-role" name="account-role">
+          <select id="account-role" name="account-role" hidden aria-hidden="true">
             <option value="student">生徒</option>
           </select>
-
-          <p class="field-help">先生アカウントは管理者がSupabaseで付与します。</p>
-
-          <label for="login-id" aria-hidden="true"></label>
-          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
-          <p class="field-help" aria-hidden="true"></p>
+          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" hidden aria-hidden="true">
 
           <label for="account-password">パスワード</label>
           <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>

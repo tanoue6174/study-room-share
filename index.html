@@ -91,86 +91,38 @@
         </form>
       </div>
 
-      <div class="role-summary" id="role-summary" hidden>
-        <div>
-          <p class="eyebrow">Dashboard</p>
-          <h3 id="dashboard-title">自習室リスト</h3>
-        </div>
-        <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
-      </div>
-
-      <div class="room-layout" hidden>
-        <form class="room-form" id="room-form" hidden>
-          <h3>自習室を登録</h3>
-
-          <label for="room-name">友達の名前</label>
-          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 田中さん" required>
-
-          <label for="room-location">場所</label>
-          <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
-
-          <div class="form-grid">
-            <div>
-              <label for="available-date">日付</label>
-              <input id="available-date" name="available-date" type="date" required>
-            </div>
-            <div>
-              <label for="capacity">人数目安</label>
-              <input id="capacity" name="capacity" type="number" min="1" max="200" value="20" required>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div>
-              <label for="start-time">開始</label>
-              <input id="start-time" name="start-time" type="time" required>
-            </div>
-            <div>
-              <label for="end-time">終了</label>
-              <input id="end-time" name="end-time" type="time" required>
-            </div>
-          </div>
-
-          <label for="room-note">メモ</label>
-          <textarea id="room-note" name="room-note" rows="4" maxlength="300" placeholder="例: 静かに自習したい人向け"></textarea>
-
-          <button class="button primary room-submit" id="room-submit" type="submit">登録する</button>
-          <p class="room-message" id="room-message" role="status" aria-live="polite"></p>
-        </form>
-
-        <div class="room-list-panel">
-          <div class="list-toolbar">
-            <h3>使える自習室</h3>
-            <button class="button auth-button-muted" id="refresh-rooms" type="button">更新</button>
-          </div>
-          <div class="room-list" id="room-list" aria-live="polite">
-            <p class="empty-rooms">ログインすると自習室リストを確認できます。</p>
-          </div>
-        </div>
-      </div>
-
-      <section class="request-panel" aria-labelledby="request-title" hidden>
-        <div class="request-heading">
+      <div class="index-support-elements" hidden>
+        <div class="role-summary" id="role-summary" hidden>
           <div>
-            <p class="eyebrow">Request</p>
-            <h3 id="request-title">要望する</h3>
+            <p class="eyebrow">Dashboard</p>
+            <h3 id="dashboard-title">自習室リスト</h3>
           </div>
-          <p>先生に、開けてほしい部屋と時間を伝えられます。</p>
+          <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
         </div>
-
-        <form class="request-form" id="request-form">
-          <label for="request-room">開けてほしい部屋</label>
-          <select id="request-room" name="request-room" required>
-            <option value="">登録されている部屋はありません</option>
-          </select>
-
-          <label for="request-time">希望時間</label>
-          <select id="request-time" name="request-time" size="6" required></select>
-
-          <button class="button primary request-submit" id="request-submit" type="submit">要望を送る</button>
-          <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
-        </form>
-      </section>
+        <div class="room-layout" hidden>
+          <form class="room-form" id="room-form" hidden>
+            <input id="room-name" type="text">
+            <input id="room-location" type="text">
+            <input id="available-date" type="date">
+            <input id="capacity" type="number" value="20">
+            <input id="start-time" type="time">
+            <input id="end-time" type="time">
+            <textarea id="room-note"></textarea>
+            <button id="room-submit" type="submit"></button>
+            <p id="room-message"></p>
+          </form>
+          <div id="room-list"></div>
+          <button id="refresh-rooms" type="button"></button>
+        </div>
+        <section class="request-panel" hidden>
+          <form id="request-form">
+            <select id="request-room"></select>
+            <select id="request-time"></select>
+            <button id="request-submit" type="submit"></button>
+            <p id="request-message"></p>
+          </form>
+        </section>
+      </div>
     </section>
   </main>
 

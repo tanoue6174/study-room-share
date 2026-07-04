@@ -104,7 +104,8 @@
         <form class="room-form" id="room-form" hidden>
           <h3>自習室を登録</h3>
 
-          <input id="room-name" name="room-name" type="hidden" value="自習室">
+          <label for="room-name">友達の名前</label>
+          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 田中さん" required>
 
           <label for="room-location">場所</label>
           <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>

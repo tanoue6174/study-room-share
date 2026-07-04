@@ -65,6 +65,8 @@
         <p class="app-intro">アカウント作成時に「先生」または「生徒」を選んでください。</p>
       </div>
 
+      <div class="school-banner" id="school-banner" hidden>ある学校</div>
+
       <div class="auth-panel" id="auth-panel">
         <div>
           <h3>ログイン</h3>
@@ -93,7 +95,6 @@
       </div>
 
       <div class="role-summary" id="role-summary" hidden>
-        <div class="school-banner" id="school-banner" hidden>ある学校</div>
         <div>
           <p class="eyebrow">Dashboard</p>
           <h3 id="dashboard-title">自習室リスト</h3>
@@ -692,6 +693,11 @@
       return role === "teacher" ? "先生" : "生徒";
     }
 
+    function isSchoolLogin(profile, user) {
+      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
+      return loginId === "STUDENT_PASSWORD_REDACTED" || loginId === "TEACHER_PASSWORD_REDACTED";
+    }
+
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
@@ -734,7 +740,7 @@
       loginId.disabled = true;
       accountPassword.disabled = true;
       roleSummary.hidden = !isDashboardPage;
-      schoolBanner.hidden = true;
+      schoolBanner.hidden = !isDashboardPage || !isSchoolLogin(profile, user);
       if (roomLayout) {
         roomLayout.hidden = !isDashboardPage;
       }

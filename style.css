@@ -395,6 +395,15 @@ p {
   background: #eaf2ff;
 }
 
+.school-banner {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--green);
+  font-weight: 800;
+}
+
 .role-summary h3 {
   margin-bottom: 0;
 }

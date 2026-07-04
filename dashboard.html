@@ -98,6 +98,7 @@
       </div>
 
       <div class="role-summary" id="role-summary" hidden>
+        <div class="school-banner" id="school-banner" hidden>ある学校</div>
         <div>
           <p class="eyebrow">Dashboard</p>
           <h3 id="dashboard-title">自習室リスト</h3>
@@ -389,6 +390,7 @@
     const signinButton = document.getElementById("signin-button");
     const signoutButton = document.getElementById("signout-button");
     const roleSummary = document.getElementById("role-summary");
+    const schoolBanner = document.getElementById("school-banner");
     const dashboardTitle = document.getElementById("dashboard-title");
     const dashboardNote = document.getElementById("dashboard-note");
     const roomLayout = document.querySelector(".room-layout");
@@ -661,11 +663,17 @@
       return role === "teacher" ? "先生" : "生徒";
     }
 
+    function isSchoolLogin(profile, user) {
+      const loginId = profile?.login_id || user?.user_metadata?.login_id || "";
+      return loginId === "STUDENT_PASSWORD_REDACTED" || loginId === "TEACHER_PASSWORD_REDACTED";
+    }
+
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
+      schoolBanner.hidden = true;
       roomForm.hidden = true;
       if (roomLayout) {
         roomLayout.hidden = true;
@@ -702,6 +710,7 @@
       registrationPassword.disabled = true;
       loginId.disabled = true;
       roleSummary.hidden = !isDashboardPage;
+      schoolBanner.hidden = !isDashboardPage || !isSchoolLogin(profile, user);
       if (roomLayout) {
         roomLayout.hidden = !isDashboardPage;
       }

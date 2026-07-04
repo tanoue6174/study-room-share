@@ -81,7 +81,8 @@
           </select>
 
           <label for="login-id">ログインID</label>
-          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="4" maxlength="24" pattern="[A-Za-z0-9_-]+" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
+          <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="4" maxlength="24" pattern="[A-Za-z0-9_-]+" value="STUDENT_PASSWORD_REDACTED" placeholder="例: STUDENT_PASSWORD_REDACTED" required>
+          <p class="field-help">ログインIDは、数字や英文字で登録できます。例: STUDENT_PASSWORD_REDACTED</p>
 
           <label for="auth-password">パスワード</label>
           <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>

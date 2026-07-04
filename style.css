@@ -311,6 +311,13 @@ p {
   border-color: var(--blue);
 }
 
+.field-help {
+  margin-top: -4px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .auth-actions {
   display: flex;
   flex-wrap: wrap;

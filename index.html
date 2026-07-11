@@ -106,7 +106,7 @@
           <form class="room-form" id="room-form" hidden>
             <select id="room-name"></select>
             <input id="room-location" type="text">
-            <input id="available-date" type="date">
+            <select id="available-date"></select>
             <input id="capacity" type="number" value="20">
             <input id="start-time" type="time">
             <input id="end-time" type="time">
@@ -133,7 +133,7 @@
         <section class="request-panel" hidden>
           <form id="request-form">
             <select id="request-room"></select>
-            <input id="request-date" type="date">
+            <select id="request-date"></select>
             <select id="request-time"></select>
             <button id="request-submit" type="submit"></button>
             <p id="request-message"></p>
@@ -720,19 +720,44 @@
       });
     }
 
+    function buildDateOptions(selectElement, placeholderText) {
+      selectElement.innerHTML = "";
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = placeholderText;
+      selectElement.appendChild(placeholder);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (let index = 0; index < 365; index += 1) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + index);
+
+        const option = document.createElement("option");
+        option.value = formatDateForInput(date);
+        option.textContent = date.toLocaleDateString("ja-JP", {
+          month: "numeric",
+          day: "numeric",
+          weekday: "short"
+        });
+        selectElement.appendChild(option);
+      }
+    }
+
     function buildRequestTimeOptions() {
       requestTime.innerHTML = "";
-      const start = roundUpToNextHalfHour(new Date());
 
-      for (let index = 0; index < 48; index += 1) {
-        const time = new Date(start.getTime() + index * 30 * 60 * 1000);
-        const option = document.createElement("option");
-        option.value = time.toISOString();
-        option.textContent = time.toLocaleString("ja-JP", {
-          hour: "2-digit",
-          minute: "2-digit"
+      for (let hour = 6; hour <= 24; hour += 1) {
+        const minuteSteps = hour === 24 ? [0] : [0, 30];
+        minuteSteps.forEach((minute) => {
+          const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+          const option = document.createElement("option");
+          option.value = label;
+          option.textContent = label;
+          requestTime.appendChild(option);
         });
-        requestTime.appendChild(option);
       }
     }
 
@@ -1600,11 +1625,8 @@
     });
 
     async function initApp() {
-      const today = formatDateForInput(new Date());
-      availableDate.value = "";
-      requestDate.value = "";
-      availableDate.min = today;
-      requestDate.min = today;
+      buildDateOptions(availableDate, "日付を選んでください");
+      buildDateOptions(requestDate, "希望日を選んでください");
       buildRequestTimeOptions();
       updateRequestRoomOptions([]);
 

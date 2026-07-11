@@ -477,12 +477,14 @@
               body: JSON.stringify(values)
             });
           },
-          async upsert(values) {
-            return request(`${restUrl}/${name}?on_conflict=id`, {
+          async upsert(values, options = {}) {
+            const onConflict = options.onConflict || "id";
+            const resolution = options.ignoreDuplicates ? "ignore-duplicates" : "merge-duplicates";
+            return request(`${restUrl}/${name}?on_conflict=${encodeURIComponent(onConflict)}`, {
               method: "POST",
               headers: {
                 ...authHeaders(true),
-                Prefer: "resolution=merge-duplicates,return=representation"
+                Prefer: `resolution=${resolution},return=representation`
               },
               body: JSON.stringify(values)
             });
@@ -2130,9 +2132,9 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        renderFriendList(localFriends);
+        renderFriendList([]);
         setFriendMessage("", "");
-        return localFriends;
+        return [];
       }
 
       const remoteFriends = (data || []).map((friend) => ({
@@ -2244,28 +2246,19 @@
         return;
       }
 
-      const { error } = await appClient.from("student_friends").insert({
+      const { error } = await appClient.from("student_friends").upsert({
         user_id: currentUser.id,
         friend_id: friendId,
         friend_name: friendName
+      }, {
+        onConflict: "user_id,friend_id",
+        ignoreDuplicates: true
       });
 
       if (error) {
-        const friends = getLocalFriends();
-        const exists = friends.some((friend) => friend.user_id === currentUser.id && friend.friend_id === friendId);
-        if (!exists) {
-          friends.push({
-            id: Date.now(),
-            user_id: currentUser.id,
-            friend_id: friendId,
-            display_name: friendName,
-            created_at: new Date().toISOString()
-          });
-          saveLocalFriends(friends);
-        }
-        button.textContent = "追加済み";
-        await loadFriends();
-        setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
+        button.disabled = false;
+        button.textContent = "追加";
+        setFriendMessage("追加できませんでした。Supabaseの設定を確認してください。", "error");
         return;
       }
 
@@ -2294,11 +2287,12 @@
       button.disabled = true;
       setFriendMessage("", "");
 
+      const remainingLocalFriends = getLocalFriends().filter((friend) => !(
+        friend.user_id === currentUser.id && String(friend.friend_id || friend.id) === String(friendId)
+      ));
+
       if (String(currentUser.id).startsWith("local-")) {
-        const friends = getLocalFriends().filter((friend) => !(
-          friend.user_id === currentUser.id && String(friend.friend_id) === String(friendId)
-        ));
-        saveLocalFriends(friends);
+        saveLocalFriends(remainingLocalFriends);
         await loadFriends();
         setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
         return;
@@ -2311,11 +2305,14 @@
         .eq("friend_id", friendId);
 
       if (error) {
+        saveLocalFriends(remainingLocalFriends);
+        await loadFriends();
         button.disabled = false;
         setFriendMessage("エラーが発生しました。Supabaseの友達解除ポリシーを確認してください。", "error");
         return;
       }
 
+      saveLocalFriends(remainingLocalFriends);
       await loadFriends();
       setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
     }

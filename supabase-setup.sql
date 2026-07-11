@@ -55,6 +55,9 @@ create table if not exists public.student_friends (
   check (user_id <> friend_id)
 );
 
+create unique index if not exists student_friends_user_friend_idx
+on public.student_friends (user_id, friend_id);
+
 create table if not exists public.study_sessions (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -357,3 +360,10 @@ with check (user_id = auth.uid());
 
 grant select on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
+
+do $$
+begin
+  if to_regclass('public.student_friends_id_seq') is not null then
+    grant usage, select on sequence public.student_friends_id_seq to authenticated;
+  end if;
+end $$;

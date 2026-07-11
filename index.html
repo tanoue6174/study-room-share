@@ -313,12 +313,14 @@
               body: JSON.stringify(values)
             });
           },
-          async upsert(values) {
-            return request(`${restUrl}/${name}?on_conflict=id`, {
+          async upsert(values, options = {}) {
+            const onConflict = options.onConflict || "id";
+            const resolution = options.ignoreDuplicates ? "ignore-duplicates" : "merge-duplicates";
+            return request(`${restUrl}/${name}?on_conflict=${encodeURIComponent(onConflict)}`, {
               method: "POST",
               headers: {
                 ...authHeaders(true),
-                Prefer: "resolution=merge-duplicates,return=representation"
+                Prefer: `resolution=${resolution},return=representation`
               },
               body: JSON.stringify(values)
             });

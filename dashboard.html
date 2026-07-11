@@ -699,18 +699,18 @@
       setText('.request-summary th:nth-child(1)', '時間');
       setText('.request-summary th:nth-child(2)', '部屋');
       setText('.request-summary th:nth-child(3)', '希望人数');
-      setText('#friends-title', 'フレンド');
+      setText('#friends-title', '友達');
       setText('#friends-panel .request-heading p:last-child', '生徒アカウントを名前で検索できます。');
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
-      setText('.friend-list-wrap h4', 'フレンド');
+      setText('.friend-list-wrap h4', '友達');
       setPlaceholder('#display-name', '学校内で使う名前');
       setPlaceholder('#account-password', 'パスワード');
       setPlaceholder('#room-location', '場所説明');
       setPlaceholder('#room-note', '例: 静かに自習したい人向け');
       setPlaceholder('#room-option-name', '例: CAD室');
       setPlaceholder('#room-option-location', '例: 3階東側');
-      setPlaceholder('#friend-search', 'フレンドの名前');
+      setPlaceholder('#friend-search', '友達の名前');
       const purposeSection = document.querySelector('main > section.section:not(.app-section)');
       if (purposeSection) {
         purposeSection.innerHTML = `
@@ -732,7 +732,7 @@
       setText('#room-list .empty-rooms', 'ログインすると自習室リストを確認できます。');
       setText('#room-option-list .empty-rooms', 'まだ部屋が設定されていません。');
       setText('#friend-results .empty-rooms', '名前を入力して検索してください。');
-      setText('#friend-list .empty-rooms', 'まだフレンドはいません。');
+      setText('#friend-list .empty-rooms', 'まだ友達はいません。');
       setText('.footer p', 'Study Room Share | 自習場所共有アプリ');
     }
     localizeStaticText();
@@ -1793,7 +1793,7 @@
         addButton.dataset.friendId = profile.id;
         addButton.dataset.friendName = profile.display_name;
         addButton.disabled = friendIds.has(profile.id);
-        addButton.textContent = friendIds.has(profile.id) ? "追加済み" : "追加";
+        addButton.textContent = friendIds.has(profile.id) ? "追加済み" : "友達を追加";
 
         item.append(nameWrap, addButton);
         friendResults.appendChild(item);
@@ -1808,7 +1808,7 @@
       friendList.innerHTML = "";
 
       if (!friends.length) {
-        friendList.innerHTML = '<p class="empty-rooms">まだフレンドはいません。</p>';
+        friendList.innerHTML = '<p class="empty-rooms">まだ友達はいません。</p>';
         return;
       }
 
@@ -1834,10 +1834,11 @@
         return [];
       }
 
+      const localFriends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
+
       if (String(currentUser.id).startsWith("local-")) {
-        const friends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
-        renderFriendList(friends);
-        return friends;
+        renderFriendList(localFriends);
+        return localFriends;
       }
 
       const { data, error } = await appClient
@@ -1847,16 +1848,21 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        const localFriends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
         renderFriendList(localFriends);
         setFriendMessage("", "");
         return localFriends;
       }
 
-      const friends = (data || []).map((friend) => ({
+      const remoteFriends = (data || []).map((friend) => ({
         id: friend.friend_id,
-        display_name: friend.friend_name
+        display_name: friend.friend_name,
+        created_at: friend.created_at
       }));
+      const remoteFriendIds = new Set(remoteFriends.map((friend) => String(friend.friend_id || friend.id)));
+      const friends = [
+        ...remoteFriends,
+        ...localFriends.filter((friend) => !remoteFriendIds.has(String(friend.friend_id || friend.id)))
+      ];
       renderFriendList(friends);
       return friends;
     }
@@ -1912,7 +1918,7 @@
       setFriendMessage("", "");
 
       const friends = await loadFriends();
-      const friendIds = new Set(friends.map((friend) => friend.id || friend.friend_id));
+      const friendIds = new Set(friends.map((friend) => friend.friend_id || friend.id));
       const { data, error } = await searchFriendsByName(query);
 
       friendSearchSubmit.disabled = false;
@@ -1954,7 +1960,7 @@
         }
         button.textContent = "追加済み";
         await loadFriends();
-        setFriendMessage(`${friendName} さんをフレンドに追加しました。`, "success");
+        setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
         return;
       }
 
@@ -1979,13 +1985,13 @@
         }
         button.textContent = "追加済み";
         await loadFriends();
-        setFriendMessage(`${friendName} さんをフレンドに追加しました。`, "success");
+        setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
         return;
       }
 
       button.textContent = "追加済み";
       await loadFriends();
-      setFriendMessage(`${friendName} さんをフレンドに追加しました。`, "success");
+      setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
     }
 
     function finishLocalLogin(account, message) {

@@ -1444,11 +1444,8 @@
 
       if (!rooms.length) {
         roomList.innerHTML = '<p class="empty-rooms">現在登録されている自習室はありません。</p>';
-        updateRequestRoomOptions([]);
         return;
       }
-
-      updateRequestRoomOptions(rooms);
 
       const groupedRooms = new Map();
       rooms.forEach((room) => {
@@ -1685,7 +1682,6 @@
 
       if (error) {
         roomList.innerHTML = '<p class="empty-rooms">閾ｪ鄙貞ｮ､繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲４upabase縺ｮ繝・・繝悶Ν險ｭ螳壹ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・/p>';
-        updateRequestRoomOptions([]);
         return;
       }
 

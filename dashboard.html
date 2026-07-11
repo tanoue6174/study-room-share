@@ -159,33 +159,33 @@
         <div class="request-heading">
           <div>
             <p class="eyebrow">Rooms</p>
-            <h3>驛ｨ螻玖ｨｭ螳・/h3>
+            <h3>部屋設定</h3>
           </div>
-          <p>閾ｪ鄙貞ｮ､逋ｻ骭ｲ縺ｧ菴ｿ縺・Κ螻九ｒ蜈医↓霑ｽ蜉縺ｧ縺阪∪縺吶・/p>
+          <p>自習室登録で使う部屋を先に追加できます。</p>
         </div>
 
         <form class="room-option-form" id="room-option-form">
           <div>
-            <label for="room-option-name">驛ｨ螻句錐</label>
-            <input id="room-option-name" name="room-option-name" type="text" maxlength="60" placeholder="萓・ 3蟷ｴA邨・謨吝ｮ､" required>
+            <label for="room-option-name">部屋名</label>
+            <input id="room-option-name" name="room-option-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
           </div>
           <div>
-            <label for="room-option-location">蝣ｴ謇</label>
-            <input id="room-option-location" name="room-option-location" type="text" maxlength="20" placeholder="萓・ 3髫・譚ｱ蛛ｴ">
+            <label for="room-option-location">場所</label>
+            <input id="room-option-location" name="room-option-location" type="text" maxlength="20" placeholder="例: 3階 東側">
           </div>
           <div>
-            <label for="room-option-accepts-requests">隕∵悍蜿嶺ｻ・/label>
+            <label for="room-option-accepts-requests">希望受付</label>
             <select id="room-option-accepts-requests" name="room-option-accepts-requests" required>
-              <option value="true">蜿励￠莉倥￠繧・/option>
-              <option value="false">蜿励￠莉倥￠縺ｪ縺・/option>
+              <option value="true">受け付ける</option>
+              <option value="false">受け付けない</option>
             </select>
           </div>
-          <button class="button primary room-option-submit" id="room-option-submit" type="submit">驛ｨ螻九ｒ霑ｽ蜉</button>
+          <button class="button primary room-option-submit" id="room-option-submit" type="submit">部屋を追加</button>
           <p class="room-message" id="room-option-message" role="status" aria-live="polite"></p>
         </form>
 
         <div class="room-option-list" id="room-option-list" aria-live="polite">
-          <p class="empty-rooms">縺ｾ縺驛ｨ螻九′險ｭ螳壹＆繧後※縺・∪縺帙ｓ縲・/p>
+          <p class="empty-rooms">まだ部屋が設定されていません。</p>
         </div>
       </section>
 
@@ -193,37 +193,37 @@
         <div class="request-heading">
           <div>
             <p class="eyebrow">Request</p>
-            <h3 id="request-title">蟶梧悍縺吶ｋ</h3>
+            <h3 id="request-title">希望する</h3>
           </div>
-          <p>蜈育函縺ｫ縲・幕縺代※縺ｻ縺励＞驛ｨ螻九→譎る俣繧剃ｼ昴∴繧峨ｌ縺ｾ縺吶・/p>
+          <p>先生に開けてほしい部屋と時間を伝えられます。</p>
         </div>
 
         <form class="request-form" id="request-form">
-          <label for="request-room">髢九￠縺ｦ縺ｻ縺励＞驛ｨ螻・/label>
+          <label for="request-room">開けてほしい部屋</label>
           <select id="request-room" name="request-room" required>
-            <option value="">逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ驛ｨ螻九・縺ゅｊ縺ｾ縺帙ｓ</option>
+            <option value="">登録されている部屋がありません</option>
           </select>
           <p class="field-help" id="request-room-description" hidden></p>
 
-          <label for="request-date">蟶梧悍譌･</label>
+          <label for="request-date">希望日</label>
           <select id="request-date" name="request-date" required></select>
 
-          <label for="request-time">蟶梧悍譎る俣</label>
+          <label for="request-time">希望時間</label>
           <select id="request-time" name="request-time" size="6" required></select>
 
-          <button class="button primary request-submit" id="request-submit" type="submit">蟶梧悍繧帝√ｋ</button>
+          <button class="button primary request-submit" id="request-submit" type="submit">希望を送る</button>
           <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
         </form>
 
         <div class="request-summary" aria-labelledby="request-summary-title">
-          <h4 id="request-summary-title">蟶梧悍莠ｺ謨ｰ繝ｪ繧ｹ繝・/h4>
+          <h4 id="request-summary-title">希望人数リスト</h4>
           <div class="table-wrap compact-table">
             <table>
               <thead>
                 <tr>
-                  <th>譎る俣</th>
-                  <th>驛ｨ螻・/th>
-                  <th>蟶梧悍莠ｺ謨ｰ</th>
+                  <th>時間</th>
+                  <th>部屋</th>
+                  <th>希望人数</th>
                 </tr>
               </thead>
               <tbody id="request-summary-list">
@@ -1886,12 +1886,10 @@
 
       if (!rooms.length) {
         roomList.innerHTML = '<p class="empty-rooms">現在登録されている自習室はありません。</p>';
-        updateRequestRoomOptions([]);
         updateStudyStartRoomOptions([]);
         return;
       }
 
-      updateRequestRoomOptions(rooms);
       updateStudyStartRoomOptions(rooms);
 
       const groupedRooms = new Map();
@@ -2536,7 +2534,6 @@
 
       if (error) {
         roomList.innerHTML = '<p class="empty-rooms">閾ｪ鄙貞ｮ､繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲４upabase縺ｮ繝・・繝悶Ν險ｭ螳壹ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・/p>';
-        updateRequestRoomOptions([]);
         return;
       }
 

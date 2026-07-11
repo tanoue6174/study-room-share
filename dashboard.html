@@ -121,7 +121,7 @@
               <input id="available-date" name="available-date" type="date" required>
             </div>
             <div>
-              <label for="capacity">人数目安</label>
+              <label for="capacity">定員</label>
               <input id="capacity" name="capacity" type="number" min="1" max="200" value="20" required>
             </div>
           </div>
@@ -173,6 +173,13 @@
             <label for="room-option-location">場所</label>
             <input id="room-option-location" name="room-option-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
           </div>
+          <div>
+            <label for="room-option-accepts-requests">要望受付</label>
+            <select id="room-option-accepts-requests" name="room-option-accepts-requests" required>
+              <option value="true">受け付ける</option>
+              <option value="false">受け付けない</option>
+            </select>
+          </div>
           <button class="button primary room-option-submit" id="room-option-submit" type="submit">部屋を追加</button>
           <p class="room-message" id="room-option-message" role="status" aria-live="polite"></p>
         </form>
@@ -206,6 +213,56 @@
           <button class="button primary request-submit" id="request-submit" type="submit">要望を送る</button>
           <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
         </form>
+
+        <div class="request-summary" aria-labelledby="request-summary-title">
+          <h4 id="request-summary-title">希望人数リスト</h4>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>時間</th>
+                  <th>部屋</th>
+                  <th>希望人数</th>
+                </tr>
+              </thead>
+              <tbody id="request-summary-list">
+                <tr>
+                  <td colspan="3">まだ要望はありません。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="friends-panel" id="friends-panel" aria-labelledby="friends-title" hidden>
+        <div class="request-heading">
+          <div>
+            <p class="eyebrow">Friends</p>
+            <h3 id="friends-title">友達</h3>
+          </div>
+          <p>同じパスワード study2026 で作った生徒アカウントを名前で検索できます。</p>
+        </div>
+
+        <form class="friend-search-form" id="friend-search-form">
+          <label for="friend-search">名前で検索</label>
+          <div class="friend-search-row">
+            <input id="friend-search" name="friend-search" type="search" maxlength="40" placeholder="友達の名前">
+            <button class="button primary" id="friend-search-submit" type="submit">検索</button>
+          </div>
+          <p class="friend-message" id="friend-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="friend-results" id="friend-results" aria-live="polite">
+          <p class="empty-rooms">名前を入力して検索してください。</p>
+        </div>
+
+        <div class="friend-list-wrap">
+          <h4>フレンド</h4>
+          <div class="friend-list" id="friend-list" aria-live="polite">
+            <p class="empty-rooms">まだフレンドはいません。</p>
+          </div>
+        </div>
       </section>
     </section>
   </main>
@@ -287,6 +344,7 @@
       function table(name) {
         const state = {
           select: "*",
+          action: "select",
           filters: [],
           orders: []
         };
@@ -300,9 +358,21 @@
             state.filters.push(`${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`);
             return builder;
           },
+          neq(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=neq.${encodeURIComponent(value)}`);
+            return builder;
+          },
+          ilike(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=ilike.${encodeURIComponent(value)}`);
+            return builder;
+          },
           order(column, options) {
             const direction = options?.ascending === false ? "desc" : "asc";
             state.orders.push(`${column}.${direction}`);
+            return builder;
+          },
+          delete() {
+            state.action = "delete";
             return builder;
           },
           async single() {
@@ -333,6 +403,18 @@
             });
           },
           async then(resolve) {
+            if (state.action === "delete") {
+              const result = await request(`${restUrl}/${name}?${state.filters.join("&")}`, {
+                method: "DELETE",
+                headers: {
+                  ...authHeaders(true),
+                  Prefer: "return=minimal"
+                }
+              });
+
+              return resolve ? resolve(result) : result;
+            }
+
             const params = [`select=${encodeURIComponent(state.select)}`, ...state.filters];
             if (state.orders.length) {
               params.push(`order=${encodeURIComponent(state.orders.join(","))}`);
@@ -442,6 +524,7 @@
     const roomOptionForm = document.getElementById("room-option-form");
     const roomOptionName = document.getElementById("room-option-name");
     const roomOptionLocation = document.getElementById("room-option-location");
+    const roomOptionAcceptsRequests = document.getElementById("room-option-accepts-requests");
     const roomOptionMessage = document.getElementById("room-option-message");
     const roomOptionList = document.getElementById("room-option-list");
     const requestForm = document.getElementById("request-form");
@@ -451,6 +534,14 @@
     const requestTitle = document.getElementById("request-title");
     const requestSubmit = document.getElementById("request-submit");
     const requestMessage = document.getElementById("request-message");
+    const requestSummaryList = document.getElementById("request-summary-list");
+    const friendsPanel = document.getElementById("friends-panel");
+    const friendSearchForm = document.getElementById("friend-search-form");
+    const friendSearch = document.getElementById("friend-search");
+    const friendSearchSubmit = document.getElementById("friend-search-submit");
+    const friendMessage = document.getElementById("friend-message");
+    const friendResults = document.getElementById("friend-results");
+    const friendList = document.getElementById("friend-list");
 
     let currentUser = null;
     let currentProfile = null;
@@ -458,6 +549,8 @@
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
     const LOCAL_ROOM_OPTIONS_KEY = "study-room-share-local-room-options";
+    const LOCAL_REQUESTS_KEY = "study-room-share-local-requests";
+    const LOCAL_FRIENDS_KEY = "study-room-share-local-friends";
     const ROLE_PASSWORDS = {
       student: ["stu", "dy", "2026"].join(""),
       teacher: ["tea", "ch", "2026"].join("")
@@ -483,6 +576,14 @@
     function setRequestMessage(text, type) {
       requestMessage.textContent = text;
       requestMessage.dataset.type = type || "";
+    }
+
+    function setFriendMessage(text, type) {
+      if (!friendMessage) {
+        return;
+      }
+      friendMessage.textContent = text;
+      friendMessage.dataset.type = type || "";
     }
 
     function setAuthLoading(isLoading) {
@@ -515,6 +616,16 @@
     function isConnectionError(error) {
       const message = String(error?.message || "").toLowerCase();
       return message.includes("failed to fetch") || message.includes("network") || message.includes("load failed");
+    }
+
+    function shouldUseLocalPasswordAccount(error) {
+      const message = String(error?.message || "").toLowerCase();
+      return isConnectionError(error)
+        || message.includes("email rate limit")
+        || message.includes("over_email_send_rate_limit")
+        || message.includes("email not confirmed")
+        || message.includes("confirm")
+        || message.includes("invalid login credentials");
     }
 
     function createLocalUser(account) {
@@ -575,10 +686,43 @@
       writeLocalJson(LOCAL_ROOM_OPTIONS_KEY, options);
     }
 
+    function getLocalRequests() {
+      return readLocalJson(LOCAL_REQUESTS_KEY, []);
+    }
+
+    function saveLocalRequests(requests) {
+      writeLocalJson(LOCAL_REQUESTS_KEY, requests);
+    }
+
+    function getLocalFriends() {
+      return readLocalJson(LOCAL_FRIENDS_KEY, []);
+    }
+
+    function saveLocalFriends(friends) {
+      writeLocalJson(LOCAL_FRIENDS_KEY, friends);
+    }
+
+    function makeAccountLoginId(password, name) {
+      const role = roleFromPassword(password);
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        return password;
+      }
+
+      let hash = 0;
+      Array.from(trimmedName.toLowerCase()).forEach((char) => {
+        hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+      });
+
+      return `${role || "user"}-${Math.abs(hash).toString(36)}`;
+    }
+
     function getPasswordAccount(id, name) {
       const role = roleFromPassword(id);
+      const loginIdValue = makeAccountLoginId(id, name);
       return {
-        login_id: id,
+        id: `local-${loginIdValue}`,
+        login_id: loginIdValue,
         display_name: name || roleLabel(role),
         role,
         password: id
@@ -587,8 +731,9 @@
 
     function signInWithPasswordFallback(id, name, message) {
       const accounts = getLocalAccounts();
-      const account = accounts[id] || getPasswordAccount(id, name);
-      accounts[id] = account;
+      const loginIdValue = makeAccountLoginId(id, name);
+      const account = accounts[loginIdValue] || accounts[id] || getPasswordAccount(id, name);
+      accounts[loginIdValue] = account;
       saveLocalAccounts(accounts);
       finishLocalLogin(account, message);
     }
@@ -741,8 +886,9 @@
 
     function updateRequestRoomOptions(rooms) {
       requestRoom.innerHTML = "";
+      const requestableRooms = rooms.filter((room) => room.accepts_requests !== false);
 
-      if (!rooms.length) {
+      if (!requestableRooms.length) {
         const option = document.createElement("option");
         option.value = "";
         option.textContent = "登録されている部屋はありません";
@@ -752,7 +898,7 @@
         return;
       }
 
-      rooms.forEach((room) => {
+      requestableRooms.forEach((room) => {
         const option = document.createElement("option");
         option.value = room.id;
         option.textContent = room.location;
@@ -766,6 +912,11 @@
     function syncSelectedRoomLocation() {
       const selectedOption = roomName.options?.[roomName.selectedIndex];
       roomLocation.value = selectedOption?.dataset.location || "";
+    }
+
+    function selectedRoomAcceptsRequests() {
+      const selectedOption = roomName.options?.[roomName.selectedIndex];
+      return selectedOption?.dataset.acceptsRequests !== "false";
     }
 
     function renderRoomOptionChoices(options) {
@@ -782,6 +933,7 @@
         option.textContent = optionItem.room_name;
         option.dataset.location = optionItem.location || "";
         option.dataset.id = optionItem.id;
+        option.dataset.acceptsRequests = optionItem.accepts_requests === false ? "false" : "true";
         roomName.appendChild(option);
       });
 
@@ -807,7 +959,18 @@
         const location = document.createElement("span");
         location.textContent = optionItem.location;
 
-        item.append(name, location);
+        const setting = document.createElement("span");
+        setting.className = optionItem.accepts_requests === false ? "room-option-status is-closed" : "room-option-status";
+        setting.textContent = optionItem.accepts_requests === false ? "要望: 受け付けない" : "要望: 受け付ける";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "room-option-delete";
+        deleteButton.type = "button";
+        deleteButton.dataset.roomOptionId = optionItem.id;
+        deleteButton.dataset.roomOptionName = optionItem.room_name;
+        deleteButton.textContent = "削除";
+
+        item.append(name, location, setting, deleteButton);
         roomOptionList.appendChild(item);
       });
     }
@@ -830,7 +993,7 @@
 
       const { data, error } = await appClient
         .from("study_room_options")
-        .select("id, room_name, location, created_at")
+        .select("id, room_name, location, accepts_requests, created_at")
         .eq("created_by", currentUser.id)
         .order("room_name", { ascending: true });
 
@@ -876,6 +1039,9 @@
       userNameLabel.textContent = "";
       roomForm.hidden = true;
       roomSettingsPanel.hidden = true;
+      if (friendsPanel) {
+        friendsPanel.hidden = true;
+      }
       if (roomLayout) {
         roomLayout.hidden = true;
       }
@@ -899,7 +1065,11 @@
       updateRequestRoomOptions([]);
       renderRoomOptions([]);
       setRoomOptionMessage("", "");
+      renderRequestSummary([]);
       setRequestMessage("", "");
+      renderFriendResults([]);
+      renderFriendList([]);
+      setFriendMessage("", "");
     }
 
     function renderLoggedIn(user, profile) {
@@ -934,6 +1104,9 @@
       requestSubmit.textContent = role === "teacher" ? "受け付ける" : "要望を送る";
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
+      if (friendsPanel) {
+        friendsPanel.hidden = !isDashboardPage || role !== "student";
+      }
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
       dashboardNote.textContent = role === "teacher"
@@ -997,11 +1170,224 @@
       });
     }
 
+    function normalizeFriendProfile(profile) {
+      return {
+        id: profile.id,
+        login_id: profile.login_id,
+        display_name: profile.display_name || profile.login_id || "名前なし",
+        role: profile.role || "student"
+      };
+    }
+
+    function renderFriendResults(profiles, friendIds = new Set()) {
+      if (!friendResults) {
+        return;
+      }
+
+      friendResults.innerHTML = "";
+
+      if (!profiles.length) {
+        friendResults.innerHTML = '<p class="empty-rooms">見つかった生徒はいません。</p>';
+        return;
+      }
+
+      profiles.forEach((profile) => {
+        const item = document.createElement("article");
+        item.className = "friend-item";
+
+        const nameWrap = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = profile.display_name;
+        const meta = document.createElement("span");
+        meta.textContent = "生徒";
+        nameWrap.append(name, meta);
+
+        const addButton = document.createElement("button");
+        addButton.className = "friend-add-button";
+        addButton.type = "button";
+        addButton.dataset.friendId = profile.id;
+        addButton.dataset.friendName = profile.display_name;
+        addButton.disabled = friendIds.has(profile.id);
+        addButton.textContent = friendIds.has(profile.id) ? "追加済み" : "追加";
+
+        item.append(nameWrap, addButton);
+        friendResults.appendChild(item);
+      });
+    }
+
+    function renderFriendList(friends) {
+      if (!friendList) {
+        return;
+      }
+
+      friendList.innerHTML = "";
+
+      if (!friends.length) {
+        friendList.innerHTML = '<p class="empty-rooms">まだフレンドはいません。</p>';
+        return;
+      }
+
+      friends.forEach((friend) => {
+        const item = document.createElement("article");
+        item.className = "friend-item is-added";
+
+        const nameWrap = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = friend.display_name || friend.friend_name || "名前なし";
+        const meta = document.createElement("span");
+        meta.textContent = "フレンド";
+        nameWrap.append(name, meta);
+
+        item.appendChild(nameWrap);
+        friendList.appendChild(item);
+      });
+    }
+
+    async function loadFriends() {
+      if (!currentUser || !friendList) {
+        renderFriendList([]);
+        return [];
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const friends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
+        renderFriendList(friends);
+        return friends;
+      }
+
+      const { data, error } = await appClient
+        .from("student_friends")
+        .select("friend_id, friend_name, created_at")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        renderFriendList([]);
+        setFriendMessage("フレンドを読み込めませんでした。Supabaseで supabase-setup.sql を実行してください。", "error");
+        return [];
+      }
+
+      const friends = (data || []).map((friend) => ({
+        id: friend.friend_id,
+        display_name: friend.friend_name
+      }));
+      renderFriendList(friends);
+      return friends;
+    }
+
+    async function searchFriendsByName(query) {
+      if (String(currentUser.id).startsWith("local-")) {
+        const accounts = Object.values(getLocalAccounts())
+          .map((account) => normalizeFriendProfile({
+            id: account.id || `local-${account.login_id}`,
+            login_id: account.login_id,
+            display_name: account.display_name,
+            role: account.role
+          }))
+          .filter((account) => account.role === "student")
+          .filter((account) => account.id !== currentUser.id)
+          .filter((account) => account.display_name.toLowerCase().includes(query.toLowerCase()));
+        return { data: accounts, error: null };
+      }
+
+      return appClient
+        .from("profiles")
+        .select("id, login_id, display_name, role")
+        .eq("role", "student")
+        .neq("id", currentUser.id)
+        .ilike("display_name", `%${query}%`)
+        .order("display_name", { ascending: true });
+    }
+
+    async function handleFriendSearch(event) {
+      event.preventDefault();
+
+      if (displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        setFriendMessage("生徒アカウントでログインすると友達を検索できます。", "error");
+        return;
+      }
+
+      const query = friendSearch.value.trim();
+      if (!query) {
+        renderFriendResults([]);
+        setFriendMessage("検索する名前を入力してください。", "error");
+        return;
+      }
+
+      friendSearchSubmit.disabled = true;
+      setFriendMessage("", "");
+
+      const friends = await loadFriends();
+      const friendIds = new Set(friends.map((friend) => friend.id || friend.friend_id));
+      const { data, error } = await searchFriendsByName(query);
+
+      friendSearchSubmit.disabled = false;
+
+      if (error) {
+        renderFriendResults([]);
+        setFriendMessage("検索できませんでした。Supabaseのprofiles読み取り権限を確認してください。", "error");
+        return;
+      }
+
+      const profiles = (data || []).map(normalizeFriendProfile);
+      renderFriendResults(profiles, friendIds);
+      setFriendMessage(`${profiles.length}人見つかりました。`, "success");
+    }
+
+    async function handleFriendAdd(event) {
+      const button = event.target.closest(".friend-add-button");
+      if (!button || button.disabled) {
+        return;
+      }
+
+      const friendId = button.dataset.friendId;
+      const friendName = button.dataset.friendName || "名前なし";
+      button.disabled = true;
+      setFriendMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const friends = getLocalFriends();
+        const exists = friends.some((friend) => friend.user_id === currentUser.id && friend.friend_id === friendId);
+        if (!exists) {
+          friends.push({
+            id: Date.now(),
+            user_id: currentUser.id,
+            friend_id: friendId,
+            display_name: friendName,
+            created_at: new Date().toISOString()
+          });
+          saveLocalFriends(friends);
+        }
+        button.textContent = "追加済み";
+        await loadFriends();
+        setFriendMessage(`${friendName} さんをフレンドに追加しました。`, "success");
+        return;
+      }
+
+      const { error } = await appClient.from("student_friends").insert({
+        user_id: currentUser.id,
+        friend_id: friendId,
+        friend_name: friendName
+      });
+
+      if (error) {
+        button.disabled = false;
+        setFriendMessage("フレンドに追加できませんでした。すでに追加済みか、Supabaseの設定を確認してください。", "error");
+        return;
+      }
+
+      button.textContent = "追加済み";
+      await loadFriends();
+      setFriendMessage(`${friendName} さんをフレンドに追加しました。`, "success");
+    }
+
     function finishLocalLogin(account, message) {
       const session = createLocalSession(account);
       renderLoggedIn(session.user, session.profile);
       loadRoomOptions();
       loadRooms();
+      loadRequests();
+      loadFriends();
       setAuthMessage(message, "success");
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
@@ -1016,6 +1402,13 @@
         .single();
 
       if (!error && data) {
+        const loginId = data.login_id || user.user_metadata?.login_id || user.email?.split("@")[0] || "";
+        const expectedRole = roleFromPassword(loginId);
+        if (expectedRole && data.role !== expectedRole) {
+          const correctedProfile = { ...data, role: expectedRole };
+          await appClient.from("profiles").upsert(correctedProfile);
+          return correctedProfile;
+        }
         return data;
       }
 
@@ -1044,7 +1437,7 @@
 
       const { data, error } = await appClient
         .from("study_rooms")
-        .select("id, room_name, location, available_date, start_time, end_time, capacity, note, created_at")
+        .select("id, room_name, location, available_date, start_time, end_time, capacity, note, accepts_requests, created_at")
         .order("available_date", { ascending: true })
         .order("start_time", { ascending: true });
 
@@ -1055,6 +1448,69 @@
       }
 
       renderRooms(data || []);
+    }
+
+    function renderRequestSummary(requests) {
+      requestSummaryList.innerHTML = "";
+
+      if (!requests.length) {
+        requestSummaryList.innerHTML = '<tr><td colspan="3">まだ要望はありません。</td></tr>';
+        return;
+      }
+
+      const summary = new Map();
+      requests.forEach((request) => {
+        const key = `${request.request_date}|${request.request_time}|${request.room_id}`;
+        const current = summary.get(key) || {
+          request_date: request.request_date,
+          request_time: request.request_time,
+          room_location: request.room_location,
+          count: 0
+        };
+        current.count += 1;
+        summary.set(key, current);
+      });
+
+      Array.from(summary.values())
+        .sort((a, b) => `${a.request_date} ${a.request_time}`.localeCompare(`${b.request_date} ${b.request_time}`))
+        .forEach((item) => {
+          const row = document.createElement("tr");
+          const timeCell = document.createElement("td");
+          const roomCell = document.createElement("td");
+          const countCell = document.createElement("td");
+
+          timeCell.textContent = `${formatSelectedDate(item.request_date)} ${item.request_time}`;
+          roomCell.textContent = item.room_location;
+          countCell.textContent = `${item.count}人`;
+
+          row.append(timeCell, roomCell, countCell);
+          requestSummaryList.appendChild(row);
+        });
+    }
+
+    async function loadRequests() {
+      if (!currentUser) {
+        renderRequestSummary([]);
+        return;
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        renderRequestSummary(getLocalRequests());
+        return;
+      }
+
+      const { data, error } = await appClient
+        .from("study_requests")
+        .select("id, room_id, room_location, request_date, request_time, created_at")
+        .order("request_date", { ascending: true })
+        .order("request_time", { ascending: true });
+
+      if (error) {
+        requestSummaryList.innerHTML = '<tr><td colspan="3">希望人数リストを読み込めませんでした。Supabaseのテーブル設定を確認してください。</td></tr>';
+        return;
+      }
+
+      renderRequestSummary(data || []);
     }
 
     async function handleSignUp() {
@@ -1079,7 +1535,7 @@
       }
 
       const id = getPasswordCredential();
-      const email = loginIdToEmail(id);
+      const email = loginIdToEmail(makeAccountLoginId(id, name));
       const password = id;
       const role = roleFromPassword(id);
       const name = displayName.value.trim() || roleLabel(role);
@@ -1093,7 +1549,7 @@
           password,
           options: {
             data: {
-              login_id: id,
+              login_id: makeAccountLoginId(id, name),
               display_name: name,
               role
             }
@@ -1103,8 +1559,8 @@
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
-            signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+          if (shouldUseLocalPasswordAccount(error)) {
+            signInWithPasswordFallback(id, name, "Supabaseで確認メール処理ができないため、この端末内でアカウントを作成してログインしました。");
             return;
           }
           setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
@@ -1114,12 +1570,12 @@
         if (data.session) {
           setAuthMessage("アカウントを作成してログインしました。", "success");
         } else {
-          setAuthMessage("アカウントを作成しました。パスワードでログインしてください。", "success");
+          signInWithPasswordFallback(id, name, "Supabaseのメール確認が必要なため、この端末内でアカウントを作成してログインしました。");
         }
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
-          signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+        if (shouldUseLocalPasswordAccount(error)) {
+          signInWithPasswordFallback(id, name, "Supabaseで確認メール処理ができないため、この端末内でアカウントを作成してログインしました。");
           return;
         }
         setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
@@ -1147,6 +1603,7 @@
       }
 
       const id = getPasswordCredential();
+      const name = displayName.value.trim();
       const password = id;
 
       setAuthLoading(true);
@@ -1154,14 +1611,14 @@
 
       try {
         const { error } = await appClient.auth.signInWithPassword({
-          email: loginIdToEmail(id),
+          email: loginIdToEmail(makeAccountLoginId(id, name)),
           password
         });
 
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
+          if (shouldUseLocalPasswordAccount(error)) {
             signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
             return;
           }
@@ -1172,7 +1629,7 @@
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
+        if (shouldUseLocalPasswordAccount(error)) {
           signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
           return;
         }
@@ -1240,6 +1697,7 @@
       setRoomMessage("", "");
       const selectedRoomName = roomName.value;
       const selectedRoomLocation = roomLocation.value;
+      const acceptsRequests = selectedRoomAcceptsRequests();
 
       if (String(currentUser.id).startsWith("local-")) {
         const rooms = getLocalRooms();
@@ -1252,6 +1710,7 @@
           end_time: endTime.value,
           capacity: Number(capacity.value),
           note: roomNote.value.trim(),
+          accepts_requests: acceptsRequests,
           created_by: currentUser.id,
           created_at: new Date().toISOString()
         });
@@ -1273,6 +1732,7 @@
         end_time: endTime.value,
         capacity: Number(capacity.value),
         note: roomNote.value.trim(),
+        accepts_requests: acceptsRequests,
         created_by: currentUser.id
       });
 
@@ -1305,6 +1765,7 @@
       const payload = {
         room_name: roomOptionName.value.trim(),
         location: roomOptionLocation.value.trim(),
+        accepts_requests: roomOptionAcceptsRequests.value === "true",
         created_by: currentUser.id
       };
 
@@ -1342,7 +1803,45 @@
       setRoomOptionMessage("部屋を追加しました。", "success");
     }
 
-    function handleRequestSubmit(event) {
+    async function handleRoomOptionDelete(event) {
+      const deleteButton = event.target.closest(".room-option-delete");
+      if (!deleteButton) {
+        return;
+      }
+
+      const optionId = deleteButton.dataset.roomOptionId;
+      const optionName = deleteButton.dataset.roomOptionName || "この部屋";
+      const confirmed = window.confirm(`${optionName} を部屋設定から削除しますか？`);
+      if (!confirmed) {
+        return;
+      }
+
+      setRoomOptionMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const options = getLocalRoomOptions().filter((item) => String(item.id) !== String(optionId));
+        saveLocalRoomOptions(options);
+        renderRoomOptions(options);
+        setRoomOptionMessage("部屋設定を削除しました。", "success");
+        return;
+      }
+
+      const { error } = await appClient
+        .from("study_room_options")
+        .delete()
+        .eq("id", optionId)
+        .eq("created_by", currentUser.id);
+
+      if (error) {
+        setRoomOptionMessage("部屋設定を削除できませんでした。Supabaseの権限設定を確認してください。", "error");
+        return;
+      }
+
+      await loadRoomOptions();
+      setRoomOptionMessage("部屋設定を削除しました。", "success");
+    }
+
+    async function handleRequestSubmit(event) {
       event.preventDefault();
 
       if (!currentUser) {
@@ -1363,6 +1862,35 @@
       const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
       const selectedDate = formatSelectedDate(requestDate.value);
       const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
+      const requestPayload = {
+        room_id: requestRoom.value,
+        room_location: selectedRoom,
+        request_date: requestDate.value,
+        request_time: selectedTime,
+        created_by: currentUser.id,
+        created_at: new Date().toISOString()
+      };
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const requests = getLocalRequests();
+        requests.push({
+          id: Date.now(),
+          ...requestPayload
+        });
+        saveLocalRequests(requests);
+        renderRequestSummary(requests);
+        setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+        return;
+      }
+
+      const { error } = await appClient.from("study_requests").insert(requestPayload);
+
+      if (error) {
+        setRequestMessage("要望を送れませんでした。Supabaseの希望リスト用テーブル設定を確認してください。", "error");
+        return;
+      }
+
+      await loadRequests();
       setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
     }
 
@@ -1376,6 +1904,8 @@
       renderLoggedIn(session.user, profile);
       await loadRoomOptions();
       await loadRooms();
+      await loadRequests();
+      await loadFriends();
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
       }
@@ -1389,8 +1919,13 @@
     signoutButton.addEventListener("click", handleSignOut);
     roomForm.addEventListener("submit", handleRoomSubmit);
     roomOptionForm.addEventListener("submit", handleRoomOptionSubmit);
+    roomOptionList.addEventListener("click", handleRoomOptionDelete);
     roomName.addEventListener("change", syncSelectedRoomLocation);
     requestForm.addEventListener("submit", handleRequestSubmit);
+    if (friendSearchForm) {
+      friendSearchForm.addEventListener("submit", handleFriendSearch);
+      friendResults.addEventListener("click", handleFriendAdd);
+    }
     refreshRooms.addEventListener("click", loadRooms);
     passwordToggle.addEventListener("click", () => {
       const shouldShow = accountPassword.type === "password";
@@ -1418,6 +1953,8 @@
           renderLoggedIn(localSession.user, localSession.profile);
           await loadRoomOptions();
           await loadRooms();
+          await loadRequests();
+          await loadFriends();
           return;
         }
         const { data } = await appClient.auth.getSession();

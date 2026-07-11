@@ -18,6 +18,7 @@ create table if not exists public.study_rooms (
   end_time time not null,
   capacity integer not null check (capacity between 1 and 200),
   note text default '',
+  accepts_requests boolean not null default true,
   created_by uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   check (start_time < end_time)
@@ -27,14 +28,43 @@ create table if not exists public.study_room_options (
   id bigint generated always as identity primary key,
   room_name text not null,
   location text not null,
+  accepts_requests boolean not null default true,
   created_by uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   unique (created_by, room_name)
 );
 
+create table if not exists public.study_requests (
+  id bigint generated always as identity primary key,
+  room_id bigint not null references public.study_rooms(id) on delete cascade,
+  room_location text not null,
+  request_date date not null,
+  request_time text not null,
+  created_by uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.student_friends (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  friend_id uuid not null references public.profiles(id) on delete cascade,
+  friend_name text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, friend_id),
+  check (user_id <> friend_id)
+);
+
+alter table public.study_rooms
+add column if not exists accepts_requests boolean not null default true;
+
+alter table public.study_room_options
+add column if not exists accepts_requests boolean not null default true;
+
 alter table public.profiles enable row level security;
 alter table public.study_rooms enable row level security;
 alter table public.study_room_options enable row level security;
+alter table public.study_requests enable row level security;
+alter table public.student_friends enable row level security;
 
 drop policy if exists "Users can read profiles" on public.profiles;
 drop policy if exists "Users can create own profile" on public.profiles;
@@ -48,6 +78,11 @@ drop policy if exists "Logged in users can read room options" on public.study_ro
 drop policy if exists "Teachers can create room options" on public.study_room_options;
 drop policy if exists "Teachers can update own room options" on public.study_room_options;
 drop policy if exists "Teachers can delete own room options" on public.study_room_options;
+drop policy if exists "Logged in users can read study requests" on public.study_requests;
+drop policy if exists "Logged in users can create study requests" on public.study_requests;
+drop policy if exists "Students can search student profiles" on public.profiles;
+drop policy if exists "Students can read own friends" on public.student_friends;
+drop policy if exists "Students can create own friends" on public.student_friends;
 
 create policy "Users can read profiles"
 on public.profiles
@@ -73,6 +108,12 @@ with check (
   id = auth.uid()
   and role in ('teacher', 'student')
 );
+
+create policy "Students can search student profiles"
+on public.profiles
+for select
+to authenticated
+using (role = 'student');
 
 create policy "Logged in users can read study rooms"
 on public.study_rooms
@@ -185,5 +226,43 @@ using (
     from public.profiles
     where profiles.id = auth.uid()
       and profiles.role = 'teacher'
+  )
+);
+
+create policy "Logged in users can read study requests"
+on public.study_requests
+for select
+to authenticated
+using (true);
+
+create policy "Logged in users can create study requests"
+on public.study_requests
+for insert
+to authenticated
+with check (created_by = auth.uid());
+
+create policy "Students can read own friends"
+on public.student_friends
+for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "Students can create own friends"
+on public.student_friends
+for insert
+to authenticated
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'student'
+  )
+  and exists (
+    select 1
+    from public.profiles friend_profile
+    where friend_profile.id = friend_id
+      and friend_profile.role = 'student'
   )
 );

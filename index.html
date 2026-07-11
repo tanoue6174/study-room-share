@@ -121,6 +121,10 @@
           <form id="room-option-form">
             <input id="room-option-name" type="text">
             <input id="room-option-location" type="text">
+            <select id="room-option-accepts-requests">
+              <option value="true"></option>
+              <option value="false"></option>
+            </select>
             <button id="room-option-submit" type="submit"></button>
             <p id="room-option-message"></p>
           </form>
@@ -216,6 +220,7 @@
       function table(name) {
         const state = {
           select: "*",
+          action: "select",
           filters: [],
           orders: []
         };
@@ -232,6 +237,10 @@
           order(column, options) {
             const direction = options?.ascending === false ? "desc" : "asc";
             state.orders.push(`${column}.${direction}`);
+            return builder;
+          },
+          delete() {
+            state.action = "delete";
             return builder;
           },
           async single() {
@@ -262,6 +271,18 @@
             });
           },
           async then(resolve) {
+            if (state.action === "delete") {
+              const result = await request(`${restUrl}/${name}?${state.filters.join("&")}`, {
+                method: "DELETE",
+                headers: {
+                  ...authHeaders(true),
+                  Prefer: "return=minimal"
+                }
+              });
+
+              return resolve ? resolve(result) : result;
+            }
+
             const params = [`select=${encodeURIComponent(state.select)}`, ...state.filters];
             if (state.orders.length) {
               params.push(`order=${encodeURIComponent(state.orders.join(","))}`);
@@ -371,6 +392,7 @@
     const roomOptionForm = document.getElementById("room-option-form");
     const roomOptionName = document.getElementById("room-option-name");
     const roomOptionLocation = document.getElementById("room-option-location");
+    const roomOptionAcceptsRequests = document.getElementById("room-option-accepts-requests");
     const roomOptionMessage = document.getElementById("room-option-message");
     const roomOptionList = document.getElementById("room-option-list");
     const requestForm = document.getElementById("request-form");
@@ -446,6 +468,16 @@
       return message.includes("failed to fetch") || message.includes("network") || message.includes("load failed");
     }
 
+    function shouldUseLocalPasswordAccount(error) {
+      const message = String(error?.message || "").toLowerCase();
+      return isConnectionError(error)
+        || message.includes("email rate limit")
+        || message.includes("over_email_send_rate_limit")
+        || message.includes("email not confirmed")
+        || message.includes("confirm")
+        || message.includes("invalid login credentials");
+    }
+
     function createLocalUser(account) {
       return {
         id: `local-${account.login_id}`,
@@ -504,10 +536,27 @@
       writeLocalJson(LOCAL_ROOM_OPTIONS_KEY, options);
     }
 
+    function makeAccountLoginId(password, name) {
+      const role = roleFromPassword(password);
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        return password;
+      }
+
+      let hash = 0;
+      Array.from(trimmedName.toLowerCase()).forEach((char) => {
+        hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+      });
+
+      return `${role || "user"}-${Math.abs(hash).toString(36)}`;
+    }
+
     function getPasswordAccount(id, name) {
       const role = roleFromPassword(id);
+      const loginIdValue = makeAccountLoginId(id, name);
       return {
-        login_id: id,
+        id: `local-${loginIdValue}`,
+        login_id: loginIdValue,
         display_name: name || roleLabel(role),
         role,
         password: id
@@ -516,8 +565,9 @@
 
     function signInWithPasswordFallback(id, name, message) {
       const accounts = getLocalAccounts();
-      const account = accounts[id] || getPasswordAccount(id, name);
-      accounts[id] = account;
+      const loginIdValue = makeAccountLoginId(id, name);
+      const account = accounts[loginIdValue] || accounts[id] || getPasswordAccount(id, name);
+      accounts[loginIdValue] = account;
       saveLocalAccounts(accounts);
       finishLocalLogin(account, message);
     }
@@ -670,8 +720,9 @@
 
     function updateRequestRoomOptions(rooms) {
       requestRoom.innerHTML = "";
+      const requestableRooms = rooms.filter((room) => room.accepts_requests !== false);
 
-      if (!rooms.length) {
+      if (!requestableRooms.length) {
         const option = document.createElement("option");
         option.value = "";
         option.textContent = "登録されている部屋はありません";
@@ -681,7 +732,7 @@
         return;
       }
 
-      rooms.forEach((room) => {
+      requestableRooms.forEach((room) => {
         const option = document.createElement("option");
         option.value = room.id;
         option.textContent = room.location;
@@ -695,6 +746,11 @@
     function syncSelectedRoomLocation() {
       const selectedOption = roomName.options?.[roomName.selectedIndex];
       roomLocation.value = selectedOption?.dataset.location || "";
+    }
+
+    function selectedRoomAcceptsRequests() {
+      const selectedOption = roomName.options?.[roomName.selectedIndex];
+      return selectedOption?.dataset.acceptsRequests !== "false";
     }
 
     function renderRoomOptionChoices(options) {
@@ -711,6 +767,7 @@
         option.textContent = optionItem.room_name;
         option.dataset.location = optionItem.location || "";
         option.dataset.id = optionItem.id;
+        option.dataset.acceptsRequests = optionItem.accepts_requests === false ? "false" : "true";
         roomName.appendChild(option);
       });
 
@@ -736,7 +793,18 @@
         const location = document.createElement("span");
         location.textContent = optionItem.location;
 
-        item.append(name, location);
+        const setting = document.createElement("span");
+        setting.className = optionItem.accepts_requests === false ? "room-option-status is-closed" : "room-option-status";
+        setting.textContent = optionItem.accepts_requests === false ? "要望: 受け付けない" : "要望: 受け付ける";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "room-option-delete";
+        deleteButton.type = "button";
+        deleteButton.dataset.roomOptionId = optionItem.id;
+        deleteButton.dataset.roomOptionName = optionItem.room_name;
+        deleteButton.textContent = "削除";
+
+        item.append(name, location, setting, deleteButton);
         roomOptionList.appendChild(item);
       });
     }
@@ -759,7 +827,7 @@
 
       const { data, error } = await appClient
         .from("study_room_options")
-        .select("id, room_name, location, created_at")
+        .select("id, room_name, location, accepts_requests, created_at")
         .eq("created_by", currentUser.id)
         .order("room_name", { ascending: true });
 
@@ -945,6 +1013,13 @@
         .single();
 
       if (!error && data) {
+        const loginId = data.login_id || user.user_metadata?.login_id || user.email?.split("@")[0] || "";
+        const expectedRole = roleFromPassword(loginId);
+        if (expectedRole && data.role !== expectedRole) {
+          const correctedProfile = { ...data, role: expectedRole };
+          await appClient.from("profiles").upsert(correctedProfile);
+          return correctedProfile;
+        }
         return data;
       }
 
@@ -973,7 +1048,7 @@
 
       const { data, error } = await appClient
         .from("study_rooms")
-        .select("id, room_name, location, available_date, start_time, end_time, capacity, note, created_at")
+        .select("id, room_name, location, available_date, start_time, end_time, capacity, note, accepts_requests, created_at")
         .order("available_date", { ascending: true })
         .order("start_time", { ascending: true });
 
@@ -1008,10 +1083,10 @@
       }
 
       const id = getPasswordCredential();
-      const email = loginIdToEmail(id);
       const password = id;
       const role = roleFromPassword(id);
       const name = displayName.value.trim() || roleLabel(role);
+      const email = loginIdToEmail(makeAccountLoginId(id, name));
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -1022,7 +1097,7 @@
           password,
           options: {
             data: {
-              login_id: id,
+              login_id: makeAccountLoginId(id, name),
               display_name: name,
               role
             }
@@ -1032,8 +1107,8 @@
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
-            signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+          if (shouldUseLocalPasswordAccount(error)) {
+            signInWithPasswordFallback(id, name, "Supabaseで確認メール処理ができないため、この端末内でアカウントを作成してログインしました。");
             return;
           }
           setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
@@ -1043,12 +1118,12 @@
         if (data.session) {
           setAuthMessage("アカウントを作成してログインしました。", "success");
         } else {
-          setAuthMessage("アカウントを作成しました。パスワードでログインしてください。", "success");
+          signInWithPasswordFallback(id, name, "Supabaseのメール確認が必要なため、この端末内でアカウントを作成してログインしました。");
         }
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
-          signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
+        if (shouldUseLocalPasswordAccount(error)) {
+          signInWithPasswordFallback(id, name, "Supabaseで確認メール処理ができないため、この端末内でアカウントを作成してログインしました。");
           return;
         }
         setAuthMessage(`アカウントを作成できませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
@@ -1076,6 +1151,7 @@
       }
 
       const id = getPasswordCredential();
+      const name = displayName.value.trim();
       const password = id;
 
       setAuthLoading(true);
@@ -1083,14 +1159,14 @@
 
       try {
         const { error } = await appClient.auth.signInWithPassword({
-          email: loginIdToEmail(id),
+          email: loginIdToEmail(makeAccountLoginId(id, name)),
           password
         });
 
         setAuthLoading(false);
 
         if (error) {
-          if (isConnectionError(error)) {
+          if (shouldUseLocalPasswordAccount(error)) {
             signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
             return;
           }
@@ -1101,7 +1177,7 @@
         setAuthMessage("ログインしました。", "success");
       } catch (error) {
         setAuthLoading(false);
-        if (isConnectionError(error)) {
+        if (shouldUseLocalPasswordAccount(error)) {
           signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
           return;
         }
@@ -1169,6 +1245,7 @@
       setRoomMessage("", "");
       const selectedRoomName = roomName.value;
       const selectedRoomLocation = roomLocation.value;
+      const acceptsRequests = selectedRoomAcceptsRequests();
 
       if (String(currentUser.id).startsWith("local-")) {
         const rooms = getLocalRooms();
@@ -1181,6 +1258,7 @@
           end_time: endTime.value,
           capacity: Number(capacity.value),
           note: roomNote.value.trim(),
+          accepts_requests: acceptsRequests,
           created_by: currentUser.id,
           created_at: new Date().toISOString()
         });
@@ -1202,6 +1280,7 @@
         end_time: endTime.value,
         capacity: Number(capacity.value),
         note: roomNote.value.trim(),
+        accepts_requests: acceptsRequests,
         created_by: currentUser.id
       });
 
@@ -1234,6 +1313,7 @@
       const payload = {
         room_name: roomOptionName.value.trim(),
         location: roomOptionLocation.value.trim(),
+        accepts_requests: roomOptionAcceptsRequests.value === "true",
         created_by: currentUser.id
       };
 
@@ -1269,6 +1349,44 @@
       roomOptionForm.reset();
       await loadRoomOptions();
       setRoomOptionMessage("部屋を追加しました。", "success");
+    }
+
+    async function handleRoomOptionDelete(event) {
+      const deleteButton = event.target.closest(".room-option-delete");
+      if (!deleteButton) {
+        return;
+      }
+
+      const optionId = deleteButton.dataset.roomOptionId;
+      const optionName = deleteButton.dataset.roomOptionName || "この部屋";
+      const confirmed = window.confirm(`${optionName} を部屋設定から削除しますか？`);
+      if (!confirmed) {
+        return;
+      }
+
+      setRoomOptionMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const options = getLocalRoomOptions().filter((item) => String(item.id) !== String(optionId));
+        saveLocalRoomOptions(options);
+        renderRoomOptions(options);
+        setRoomOptionMessage("部屋設定を削除しました。", "success");
+        return;
+      }
+
+      const { error } = await appClient
+        .from("study_room_options")
+        .delete()
+        .eq("id", optionId)
+        .eq("created_by", currentUser.id);
+
+      if (error) {
+        setRoomOptionMessage("部屋設定を削除できませんでした。Supabaseの権限設定を確認してください。", "error");
+        return;
+      }
+
+      await loadRoomOptions();
+      setRoomOptionMessage("部屋設定を削除しました。", "success");
     }
 
     function handleRequestSubmit(event) {
@@ -1318,6 +1436,7 @@
     signoutButton.addEventListener("click", handleSignOut);
     roomForm.addEventListener("submit", handleRoomSubmit);
     roomOptionForm.addEventListener("submit", handleRoomOptionSubmit);
+    roomOptionList.addEventListener("click", handleRoomOptionDelete);
     roomName.addEventListener("change", syncSelectedRoomLocation);
     requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);

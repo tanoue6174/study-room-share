@@ -784,6 +784,64 @@
       });
     }
 
+    function maxAllowedDateTime() {
+      const max = new Date();
+      max.setMonth(max.getMonth() + 3);
+      return max;
+    }
+
+    function dateTimeFromInputs(dateValue, timeValue) {
+      if (!dateValue || !timeValue) {
+        return null;
+      }
+
+      const [hour, minute] = timeValue.split(":").map(Number);
+      const date = new Date(`${dateValue}T00:00:00`);
+      date.setHours(hour, minute, 0, 0);
+      return date;
+    }
+
+    function getTimeRangeProblem(dateValue, startValue, endValue) {
+      const now = new Date();
+      const max = maxAllowedDateTime();
+      const start = dateTimeFromInputs(dateValue, startValue);
+      const end = dateTimeFromInputs(dateValue, endValue);
+
+      if (!start || !end) {
+        return "";
+      }
+
+      if (start <= now) {
+        return "すでに過ぎた時間は設定できません。現在より後の開始時間を選んでください。";
+      }
+
+      if (start > max || end > max) {
+        return "3か月以内の時間だけ設定できます。";
+      }
+
+      return "";
+    }
+
+    function getRequestTimeProblem(dateValue, timeValue) {
+      const now = new Date();
+      const max = maxAllowedDateTime();
+      const requestAt = dateTimeFromInputs(dateValue, timeValue);
+
+      if (!requestAt) {
+        return "";
+      }
+
+      if (requestAt <= now) {
+        return "すでに過ぎた時間は希望できません。現在より後の時間を選んでください。";
+      }
+
+      if (requestAt > max) {
+        return "3か月以内の時間だけ希望できます。";
+      }
+
+      return "";
+    }
+
     function buildDateOptions(selectElement, placeholderText) {
       selectElement.innerHTML = "";
 
@@ -794,10 +852,15 @@
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const maxDate = maxAllowedDateTime();
+      maxDate.setHours(0, 0, 0, 0);
 
-      for (let index = 0; index < 365; index += 1) {
+      for (let index = 0; ; index += 1) {
         const date = new Date(today);
         date.setDate(today.getDate() + index);
+        if (date > maxDate) {
+          break;
+        }
 
         const option = document.createElement("option");
         option.value = formatDateForInput(date);
@@ -1470,6 +1533,12 @@
         return;
       }
 
+      const roomTimeProblem = getTimeRangeProblem(availableDate.value, startTime.value, endTime.value);
+      if (roomTimeProblem) {
+        setRoomMessage(roomTimeProblem, "error");
+        return;
+      }
+
       setRoomLoading(true);
       setRoomMessage("", "");
       const selectedRoomName = roomName.value;
@@ -1733,6 +1802,12 @@
       const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
       const selectedDate = formatSelectedDate(requestDate.value);
       const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
+      const requestTimeProblem = getRequestTimeProblem(requestDate.value, selectedTime);
+      if (requestTimeProblem) {
+        setRequestMessage(requestTimeProblem, "error");
+        return;
+      }
+
       setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい希望を受け付けました。`, "success");
     }
 

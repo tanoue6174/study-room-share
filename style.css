@@ -598,7 +598,7 @@ p {
 
 .room-item {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr;
+  grid-template-columns: 1.1fr 1fr 0.9fr 0.8fr;
   gap: 12px;
   align-items: start;
   padding: 16px;
@@ -632,6 +632,10 @@ p {
 
 .room-crowd-cell {
   order: 3;
+}
+
+.room-friends-cell {
+  order: 4;
 }
 
 .room-list-label {
@@ -720,6 +724,37 @@ p {
   color: var(--muted);
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.room-friends-wrap {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.room-friends-button {
+  border: 1px solid #9fc2ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #eaf2ff;
+  color: #173b78;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.room-friends-button:hover {
+  background: #dceaff;
+}
+
+.room-friends-detail {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }

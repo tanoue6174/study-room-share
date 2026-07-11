@@ -660,6 +660,7 @@
     let currentProfile = null;
     let currentRequests = [];
     let currentRoomPlans = [];
+    let currentFriends = [];
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
@@ -1040,6 +1041,46 @@
 
       const roomId = getRoomId(room);
       return currentRoomPlans.filter((plan) => String(plan.room_id) === roomId).length;
+    }
+
+    function getFriendId(friend) {
+      return String(friend?.friend_id || friend?.id || "");
+    }
+
+    function getFriendDisplayName(friend) {
+      return friend?.display_name || friend?.friend_name || "名前なし";
+    }
+
+    function getFriendPlansForRoom(room) {
+      if (!isSupabaseUser() || displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        return [];
+      }
+
+      const roomId = getRoomId(room);
+      const friendMap = new Map();
+      currentFriends.forEach((friend) => {
+        const friendId = getFriendId(friend);
+        if (friendId) {
+          friendMap.set(friendId, getFriendDisplayName(friend));
+        }
+      });
+
+      const shownFriendIds = new Set();
+      return currentRoomPlans
+        .filter((plan) => String(plan.room_id) === roomId)
+        .filter((plan) => friendMap.has(String(plan.user_id)))
+        .filter((plan) => {
+          const friendId = String(plan.user_id);
+          if (shownFriendIds.has(friendId)) {
+            return false;
+          }
+          shownFriendIds.add(friendId);
+          return true;
+        })
+        .map((plan) => ({
+          id: String(plan.user_id),
+          name: friendMap.get(String(plan.user_id))
+        }));
     }
 
     async function loadRoomPlans(rooms) {
@@ -1812,6 +1853,7 @@
       currentUser = null;
       currentProfile = null;
       currentRoomPlans = [];
+      currentFriends = [];
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
       schoolBanner.hidden = true;
@@ -2064,6 +2106,41 @@
 
               crowdCell.append(crowdLabel, crowdValue);
               item.appendChild(crowdCell);
+
+              const friendPlans = getFriendPlansForRoom(room);
+              if (friendPlans.length) {
+                const friendsCell = document.createElement("div");
+                friendsCell.className = "room-list-cell room-friends-cell";
+
+                const friendsLabel = document.createElement("span");
+                friendsLabel.className = "room-list-label";
+                friendsLabel.textContent = "友達";
+
+                const friendsWrap = document.createElement("div");
+                friendsWrap.className = "room-friends-wrap";
+
+                const friendsButton = document.createElement("button");
+                friendsButton.className = "room-friends-button";
+                friendsButton.type = "button";
+                friendsButton.textContent = "友達";
+                friendsButton.setAttribute("aria-expanded", "false");
+
+                const friendsDetail = document.createElement("p");
+                friendsDetail.className = "room-friends-detail";
+                friendsDetail.hidden = true;
+                friendsDetail.textContent = friendPlans.map((friend) => friend.name).join("、");
+
+                friendsButton.addEventListener("click", () => {
+                  const willShow = friendsDetail.hidden;
+                  friendsDetail.hidden = !willShow;
+                  friendsButton.setAttribute("aria-expanded", String(willShow));
+                });
+
+                friendsWrap.append(friendsButton, friendsDetail);
+                friendsCell.append(friendsLabel, friendsWrap);
+                item.appendChild(friendsCell);
+              }
+
               group.appendChild(item);
             });
 
@@ -2244,6 +2321,7 @@
 
     async function loadFriends() {
       if (!currentUser || !friendList) {
+        currentFriends = [];
         renderFriendList([]);
         return [];
       }
@@ -2251,6 +2329,7 @@
       const localFriends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
 
       if (String(currentUser.id).startsWith("local-")) {
+        currentFriends = localFriends;
         renderFriendList(localFriends);
         return localFriends;
       }
@@ -2262,6 +2341,7 @@
         .order("created_at", { ascending: false });
 
       if (error) {
+        currentFriends = [];
         renderFriendList([]);
         setFriendMessage("友達リストを読み込めませんでした。Supabaseの設定を確認してください。", "error");
         return [];
@@ -2275,6 +2355,7 @@
       if (localFriends.length) {
         saveLocalFriends(getLocalFriends().filter((friend) => friend.user_id !== currentUser.id));
       }
+      currentFriends = remoteFriends;
       renderFriendList(remoteFriends);
       return remoteFriends;
     }
@@ -2372,6 +2453,7 @@
         }
         button.textContent = "追加済み";
         await loadFriends();
+        await loadRooms();
         setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
         return;
       }
@@ -2396,15 +2478,17 @@
       const loadedFriends = await loadFriends();
       const alreadyVisible = loadedFriends.some((friend) => String(friend.friend_id || friend.id) === String(friendId));
       if (!alreadyVisible) {
-        renderFriendList([
+        currentFriends = [
           ...loadedFriends,
           {
             id: friendId,
             display_name: friendName,
             created_at: new Date().toISOString()
           }
-        ]);
+        ];
+        renderFriendList(currentFriends);
       }
+      await loadRooms();
       setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
     }
 
@@ -2435,6 +2519,7 @@
       if (String(currentUser.id).startsWith("local-")) {
         saveLocalFriends(remainingLocalFriends);
         await loadFriends();
+        await loadRooms();
         setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
         return;
       }
@@ -2448,6 +2533,7 @@
       if (error) {
         saveLocalFriends(remainingLocalFriends);
         await loadFriends();
+        await loadRooms();
         button.disabled = false;
         setFriendMessage("エラーが発生しました。Supabaseの友達解除ポリシーを確認してください。", "error");
         return;
@@ -2455,6 +2541,7 @@
 
       saveLocalFriends(remainingLocalFriends);
       await loadFriends();
+      await loadRooms();
       setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
     }
 
@@ -2463,8 +2550,8 @@
       renderLoggedIn(session.user, session.profile);
       loadRoomOptions();
       loadRequests();
-      loadRooms();
       loadFriends();
+      loadRooms();
       setAuthMessage(message, "success");
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
@@ -3224,9 +3311,9 @@
       renderLoggedIn(session.user, profile);
       await loadRoomOptions();
       await loadRequests();
+      await loadFriends();
       await loadRooms();
       await loadStudySession();
-      await loadFriends();
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
       }

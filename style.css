@@ -412,6 +412,10 @@ p {
   background: #ffffff;
 }
 
+#signout-button {
+  margin-left: auto;
+}
+
 .auth-message {
   min-height: 28px;
   color: var(--muted);

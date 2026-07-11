@@ -2105,13 +2105,11 @@
         display_name: friend.friend_name,
         created_at: friend.created_at
       }));
-      const remoteFriendIds = new Set(remoteFriends.map((friend) => String(friend.friend_id || friend.id)));
-      const friends = [
-        ...remoteFriends,
-        ...localFriends.filter((friend) => !remoteFriendIds.has(String(friend.friend_id || friend.id)))
-      ];
-      renderFriendList(friends);
-      return friends;
+      if (localFriends.length) {
+        saveLocalFriends(getLocalFriends().filter((friend) => friend.user_id !== currentUser.id));
+      }
+      renderFriendList(remoteFriends);
+      return remoteFriends;
     }
 
     async function searchFriendsByName(query) {

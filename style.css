@@ -724,7 +724,8 @@ p {
   overflow-wrap: anywhere;
 }
 
-.request-panel {
+.request-panel,
+.study-start-panel {
   margin-top: 16px;
   padding: 22px;
   border: 1px solid var(--line);
@@ -740,6 +741,34 @@ p {
   border-radius: 8px;
   background: var(--panel);
   box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
+}
+
+.study-start-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.study-status {
+  margin-top: 16px;
+}
+
+.study-status-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.study-status-item strong {
+  color: #173b78;
+}
+
+.study-status-item span {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .room-settings-panel {

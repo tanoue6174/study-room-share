@@ -55,6 +55,17 @@ create table if not exists public.student_friends (
   check (user_id <> friend_id)
 );
 
+create table if not exists public.study_sessions (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  room_id bigint references public.study_rooms(id) on delete set null,
+  room_name text not null,
+  location text default '',
+  ends_at text,
+  active boolean not null default true,
+  started_at timestamptz not null default now()
+);
+
 alter table public.study_rooms
 add column if not exists accepts_requests boolean not null default true;
 
@@ -101,6 +112,7 @@ alter table public.study_rooms enable row level security;
 alter table public.study_room_options enable row level security;
 alter table public.study_requests enable row level security;
 alter table public.student_friends enable row level security;
+alter table public.study_sessions enable row level security;
 
 drop policy if exists "Users can read profiles" on public.profiles;
 drop policy if exists "Users can create own profile" on public.profiles;
@@ -119,6 +131,9 @@ drop policy if exists "Logged in users can create study requests" on public.stud
 drop policy if exists "Students can search student profiles" on public.profiles;
 drop policy if exists "Students can read own friends" on public.student_friends;
 drop policy if exists "Students can create own friends" on public.student_friends;
+drop policy if exists "Students can read own study sessions" on public.study_sessions;
+drop policy if exists "Students can create own study sessions" on public.study_sessions;
+drop policy if exists "Students can update own study sessions" on public.study_sessions;
 
 create policy "Users can read profiles"
 on public.profiles
@@ -305,6 +320,33 @@ with check (
       and friend_profile.role = 'student'
   )
 );
+
+create policy "Students can read own study sessions"
+on public.study_sessions
+for select
+to authenticated
+using (user_id = auth.uid());
+
+create policy "Students can create own study sessions"
+on public.study_sessions
+for insert
+to authenticated
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'student'
+  )
+);
+
+create policy "Students can update own study sessions"
+on public.study_sessions
+for update
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
 
 grant select on public.profiles to authenticated;
 grant select, insert on public.student_friends to authenticated;

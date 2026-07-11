@@ -699,6 +699,34 @@ p {
   font-weight: 700;
 }
 
+.room-option-location-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.room-option-location-cell span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.room-option-location-edit {
+  flex: 0 0 auto;
+  border: 1px solid #9fc2ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #eaf2ff;
+  color: #173b78;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.room-option-location-edit:hover {
+  background: #dceaff;
+}
+
 .room-option-status {
   padding: 6px 10px;
   border-radius: 999px;
@@ -710,6 +738,22 @@ p {
 .room-option-status.is-closed {
   background: #fff0e8;
   color: #a84818;
+}
+
+.room-option-setting {
+  min-width: 160px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.room-option-setting:focus {
+  outline: 3px solid rgba(47, 111, 237, 0.18);
+  border-color: var(--blue);
 }
 
 .room-option-delete {
@@ -1012,5 +1056,10 @@ tr:last-child td {
 
   .room-option-item {
     grid-template-columns: 1fr;
+  }
+
+  .room-option-location-cell {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

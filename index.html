@@ -243,6 +243,11 @@
             state.action = "delete";
             return builder;
           },
+          update(values) {
+            state.action = "update";
+            state.values = values;
+            return builder;
+          },
           async single() {
             const result = await builder.then();
             return {
@@ -278,6 +283,19 @@
                   ...authHeaders(true),
                   Prefer: "return=minimal"
                 }
+              });
+
+              return resolve ? resolve(result) : result;
+            }
+
+            if (state.action === "update") {
+              const result = await request(`${restUrl}/${name}?${state.filters.join("&")}`, {
+                method: "PATCH",
+                headers: {
+                  ...authHeaders(true),
+                  Prefer: "return=representation"
+                },
+                body: JSON.stringify(state.values)
               });
 
               return resolve ? resolve(result) : result;
@@ -735,7 +753,7 @@
       requestableRooms.forEach((room) => {
         const option = document.createElement("option");
         option.value = room.id;
-        option.textContent = room.location;
+        option.textContent = room.location ? `${room.room_name} (${room.location})` : room.room_name;
         requestRoom.appendChild(option);
       });
 
@@ -790,12 +808,31 @@
         const name = document.createElement("strong");
         name.textContent = optionItem.room_name;
 
-        const location = document.createElement("span");
-        location.textContent = optionItem.location;
+        const locationWrap = document.createElement("div");
+        locationWrap.className = "room-option-location-cell";
 
-        const setting = document.createElement("span");
-        setting.className = optionItem.accepts_requests === false ? "room-option-status is-closed" : "room-option-status";
-        setting.textContent = optionItem.accepts_requests === false ? "要望: 受け付けない" : "要望: 受け付ける";
+        const location = document.createElement("span");
+        location.textContent = optionItem.location || "場所未設定";
+
+        const locationButton = document.createElement("button");
+        locationButton.className = "room-option-location-edit";
+        locationButton.type = "button";
+        locationButton.dataset.roomOptionId = optionItem.id;
+        locationButton.dataset.roomOptionName = optionItem.room_name;
+        locationButton.dataset.roomOptionLocation = optionItem.location || "";
+        locationButton.textContent = "変更";
+
+        locationWrap.append(location, locationButton);
+
+        const setting = document.createElement("select");
+        setting.className = "room-option-setting";
+        setting.dataset.roomOptionId = optionItem.id;
+        setting.dataset.roomOptionName = optionItem.room_name;
+        setting.innerHTML = `
+          <option value="true">要望: 受け付ける</option>
+          <option value="false">要望: 受け付けない</option>
+        `;
+        setting.value = optionItem.accepts_requests === false ? "false" : "true";
 
         const deleteButton = document.createElement("button");
         deleteButton.className = "room-option-delete";
@@ -804,7 +841,7 @@
         deleteButton.dataset.roomOptionName = optionItem.room_name;
         deleteButton.textContent = "削除";
 
-        item.append(name, location, setting, deleteButton);
+        item.append(name, locationWrap, setting, deleteButton);
         roomOptionList.appendChild(item);
       });
     }
@@ -821,14 +858,15 @@
       }
 
       if (String(currentUser.id).startsWith("local-")) {
-        renderRoomOptions(getLocalRoomOptions());
+        const options = getLocalRoomOptions();
+        renderRoomOptions(displayRoleForAccount(currentProfile, currentUser) === "teacher" ? options : []);
+        updateRequestRoomOptions(options);
         return;
       }
 
       const { data, error } = await appClient
         .from("study_room_options")
-        .select("id, room_name, location, accepts_requests, created_at")
-        .eq("created_by", currentUser.id)
+        .select("id, room_name, location, accepts_requests, created_by, created_at")
         .order("room_name", { ascending: true });
 
       if (error) {
@@ -837,7 +875,12 @@
         return;
       }
 
-      renderRoomOptions(data || []);
+      const options = data || [];
+      const ownOptions = displayRoleForAccount(currentProfile, currentUser) === "teacher"
+        ? options.filter((option) => option.created_by === currentUser.id)
+        : [];
+      renderRoomOptions(ownOptions);
+      updateRequestRoomOptions(options);
     }
 
     function roleLabel(role) {
@@ -846,7 +889,8 @@
 
     function isSchoolLogin(profile, user) {
       const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-      return loginId === "study2026" || loginId === "teach2026";
+      const role = profile?.role || user?.user_metadata?.role || "";
+      return loginId === "study2026" || loginId === "teach2026" || role === "student" || role === "teacher";
     }
 
     function displayRoleForAccount(profile, user) {
@@ -968,7 +1012,7 @@
           },
           {
             label: "場所",
-            value: room.location
+            value: room.location || "場所未設定"
           },
           {
             label: "部屋名",
@@ -997,8 +1041,8 @@
     function finishLocalLogin(account, message) {
       const session = createLocalSession(account);
       renderLoggedIn(session.user, session.profile);
-      loadRoomOptions();
       loadRooms();
+      loadRoomOptions();
       setAuthMessage(message, "success");
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
@@ -1269,6 +1313,7 @@
         syncSelectedRoomLocation();
         setRoomMessage("自習室を登録しました。", "success");
         await loadRooms();
+        await loadRoomOptions();
         return;
       }
 
@@ -1296,6 +1341,7 @@
       syncSelectedRoomLocation();
       setRoomMessage("自習室を登録しました。", "success");
       await loadRooms();
+      await loadRoomOptions();
     }
 
     async function handleRoomOptionSubmit(event) {
@@ -1389,6 +1435,90 @@
       setRoomOptionMessage("部屋設定を削除しました。", "success");
     }
 
+    async function handleRoomOptionLocationEdit(event) {
+      const editButton = event.target.closest(".room-option-location-edit");
+      if (!editButton) {
+        return;
+      }
+
+      const optionId = editButton.dataset.roomOptionId;
+      const optionName = editButton.dataset.roomOptionName || "この部屋";
+      const currentLocation = editButton.dataset.roomOptionLocation || "";
+      const nextLocation = window.prompt(`${optionName} の場所説明を入力してください。空欄でも登録できます。`, currentLocation);
+      if (nextLocation === null) {
+        return;
+      }
+
+      const location = nextLocation.trim();
+      setRoomOptionMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const options = getLocalRoomOptions().map((item) => (
+          String(item.id) === String(optionId)
+            ? { ...item, location }
+            : item
+        ));
+        saveLocalRoomOptions(options);
+        renderRoomOptions(options);
+        setRoomOptionMessage("場所説明を変更しました。", "success");
+        return;
+      }
+
+      const { error } = await appClient
+        .from("study_room_options")
+        .update({ location })
+        .eq("id", optionId)
+        .eq("created_by", currentUser.id);
+
+      if (error) {
+        setRoomOptionMessage("場所説明を変更できませんでした。Supabaseの権限設定を確認してください。", "error");
+        await loadRoomOptions();
+        return;
+      }
+
+      await loadRoomOptions();
+      setRoomOptionMessage("場所説明を変更しました。", "success");
+    }
+
+    async function handleRoomOptionSettingChange(event) {
+      const setting = event.target.closest(".room-option-setting");
+      if (!setting) {
+        return;
+      }
+
+      const optionId = setting.dataset.roomOptionId;
+      const acceptsRequests = setting.value === "true";
+      setRoomOptionMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const options = getLocalRoomOptions().map((item) => (
+          String(item.id) === String(optionId)
+            ? { ...item, accepts_requests: acceptsRequests }
+            : item
+        ));
+        saveLocalRoomOptions(options);
+        renderRoomOptions(options);
+        updateRequestRoomOptions(options);
+        setRoomOptionMessage("要望受付の設定を変更しました。", "success");
+        return;
+      }
+
+      const { error } = await appClient
+        .from("study_room_options")
+        .update({ accepts_requests: acceptsRequests })
+        .eq("id", optionId)
+        .eq("created_by", currentUser.id);
+
+      if (error) {
+        setRoomOptionMessage("要望受付の設定を変更できませんでした。Supabaseの権限設定を確認してください。", "error");
+        await loadRoomOptions();
+        return;
+      }
+
+      await loadRoomOptions();
+      setRoomOptionMessage("要望受付の設定を変更しました。", "success");
+    }
+
     function handleRequestSubmit(event) {
       event.preventDefault();
 
@@ -1421,8 +1551,8 @@
 
       const profile = await fetchProfile(session.user);
       renderLoggedIn(session.user, profile);
-      await loadRoomOptions();
       await loadRooms();
+      await loadRoomOptions();
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
       }
@@ -1437,6 +1567,8 @@
     roomForm.addEventListener("submit", handleRoomSubmit);
     roomOptionForm.addEventListener("submit", handleRoomOptionSubmit);
     roomOptionList.addEventListener("click", handleRoomOptionDelete);
+    roomOptionList.addEventListener("click", handleRoomOptionLocationEdit);
+    roomOptionList.addEventListener("change", handleRoomOptionSettingChange);
     roomName.addEventListener("change", syncSelectedRoomLocation);
     requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);
@@ -1464,8 +1596,8 @@
         const localSession = getLocalSession();
         if (localSession?.user && localSession?.profile) {
           renderLoggedIn(localSession.user, localSession.profile);
-          await loadRoomOptions();
           await loadRooms();
+          await loadRoomOptions();
           return;
         }
         const { data } = await appClient.auth.getSession();

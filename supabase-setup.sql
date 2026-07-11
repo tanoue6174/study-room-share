@@ -36,7 +36,8 @@ create table if not exists public.study_room_options (
 
 create table if not exists public.study_requests (
   id bigint generated always as identity primary key,
-  room_id bigint not null references public.study_rooms(id) on delete cascade,
+  room_id bigint references public.study_rooms(id) on delete cascade,
+  room_option_id bigint references public.study_room_options(id) on delete cascade,
   room_location text not null,
   request_date date not null,
   request_time text not null,
@@ -59,6 +60,12 @@ add column if not exists accepts_requests boolean not null default true;
 
 alter table public.study_room_options
 add column if not exists accepts_requests boolean not null default true;
+
+alter table public.study_requests
+alter column room_id drop not null;
+
+alter table public.study_requests
+add column if not exists room_option_id bigint references public.study_room_options(id) on delete cascade;
 
 alter table public.profiles enable row level security;
 alter table public.study_rooms enable row level security;

@@ -987,9 +987,9 @@
         requestPanel.hidden = true;
       }
       if (requestTitle) {
-        requestTitle.textContent = "要望する";
+        requestTitle.textContent = "希望する";
       }
-      requestSubmit.textContent = "要望を送る";
+      requestSubmit.textContent = "希望を送る";
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
@@ -1033,9 +1033,9 @@
         requestPanel.hidden = !isDashboardPage;
       }
       if (requestTitle) {
-        requestTitle.textContent = role === "teacher" ? "受け付ける" : "要望する";
+        requestTitle.textContent = role === "teacher" ? "受け付ける" : "希望する";
       }
-      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "要望を送る";
+      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "希望を送る";
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
 
@@ -1609,7 +1609,7 @@
       event.preventDefault();
 
       if (!currentUser) {
-        setRequestMessage("ログインすると要望を送れます。", "error");
+        setRequestMessage("ログインすると希望を送れます。", "error");
         return;
       }
 
@@ -1626,7 +1626,7 @@
       const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
       const selectedDate = formatSelectedDate(requestDate.value);
       const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
-      setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+      setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい希望を受け付けました。`, "success");
     }
 
     async function handleSession(session) {

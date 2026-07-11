@@ -193,7 +193,7 @@
         <div class="request-heading">
           <div>
             <p class="eyebrow">Request</p>
-            <h3 id="request-title">要望する</h3>
+            <h3 id="request-title">希望する</h3>
           </div>
           <p>先生に、開けてほしい部屋と時間を伝えられます。</p>
         </div>
@@ -210,7 +210,7 @@
           <label for="request-time">希望時間</label>
           <select id="request-time" name="request-time" size="6" required></select>
 
-          <button class="button primary request-submit" id="request-submit" type="submit">要望を送る</button>
+          <button class="button primary request-submit" id="request-submit" type="submit">希望を送る</button>
           <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
         </form>
 
@@ -1156,9 +1156,9 @@
         requestPanel.hidden = true;
       }
       if (requestTitle) {
-        requestTitle.textContent = "要望する";
+        requestTitle.textContent = "希望する";
       }
-      requestSubmit.textContent = "要望を送る";
+      requestSubmit.textContent = "希望を送る";
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
@@ -1206,9 +1206,9 @@
         requestPanel.hidden = !isDashboardPage;
       }
       if (requestTitle) {
-        requestTitle.textContent = role === "teacher" ? "受け付ける" : "要望する";
+        requestTitle.textContent = role === "teacher" ? "受け付ける" : "希望する";
       }
-      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "要望を送る";
+      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "希望を送る";
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
       if (friendsPanel) {
@@ -2075,7 +2075,7 @@
       event.preventDefault();
 
       if (!currentUser) {
-        setRequestMessage("ログインすると要望を送れます。", "error");
+        setRequestMessage("ログインすると希望を送れます。", "error");
         return;
       }
 
@@ -2110,19 +2110,19 @@
         });
         saveLocalRequests(requests);
         renderRequestSummary(requests);
-        setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+        setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい希望を受け付けました。`, "success");
         return;
       }
 
       const { error } = await appClient.from("study_requests").insert(requestPayload);
 
       if (error) {
-        setRequestMessage("要望を送れませんでした。Supabaseの希望リスト用テーブル設定を確認してください。", "error");
+        setRequestMessage("希望を送れませんでした。Supabaseの希望リスト用テーブル設定を確認してください。", "error");
         return;
       }
 
       await loadRequests();
-      setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい要望を受け付けました。`, "success");
+      setRequestMessage(`${selectedDate} ${selectedTime} に ${selectedRoom} を開けてほしい希望を受け付けました。`, "success");
     }
 
     async function handleSession(session) {

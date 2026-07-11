@@ -1367,6 +1367,14 @@
       return new Date(`${room.available_date}T${String(room.end_time).slice(0, 5)}:00`);
     }
 
+    function roomStartDateTime(room) {
+      if (!room?.available_date || !room?.start_time) {
+        return null;
+      }
+
+      return new Date(`${room.available_date}T${String(room.start_time).slice(0, 5)}:00`);
+    }
+
     function filterVisibleRooms(rooms) {
       const cutoff = visibleRoomCutoff();
 
@@ -1525,6 +1533,7 @@
         return;
       }
 
+      const previousValue = studyEndTime.value;
       studyEndTime.innerHTML = "";
 
       const noEndOption = document.createElement("option");
@@ -1532,15 +1541,22 @@
       noEndOption.textContent = "終了時間を入れない";
       studyEndTime.appendChild(noEndOption);
 
-      for (let hour = 6; hour <= 24; hour += 1) {
-        const minuteSteps = hour === 24 ? [0] : [0, 30];
-        minuteSteps.forEach((minute) => {
-          const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-          const option = document.createElement("option");
-          option.value = label;
-          option.textContent = label;
-          studyEndTime.appendChild(option);
-        });
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const firstOptionMinutes = Math.min(24 * 60, Math.ceil(currentMinutes / 30) * 30);
+
+      for (let minutes = firstOptionMinutes; minutes <= 24 * 60; minutes += 30) {
+        const hour = Math.floor(minutes / 60);
+        const minute = minutes % 60;
+        const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+        const option = document.createElement("option");
+        option.value = label;
+        option.textContent = label;
+        studyEndTime.appendChild(option);
+      }
+
+      if ([...studyEndTime.options].some((option) => option.value === previousValue)) {
+        studyEndTime.value = previousValue;
       }
     }
 
@@ -1620,8 +1636,10 @@
     }
 
     function canStartStudyInRoom(room) {
+      const roomStartAt = roomStartDateTime(room);
       const roomEndAt = roomEndDateTime(room);
-      return Boolean(roomEndAt && roomEndAt >= new Date());
+      const now = new Date();
+      return Boolean(roomStartAt && roomEndAt && roomStartAt <= now && roomEndAt > now);
     }
 
     function studyStartOptionToRoom(option) {
@@ -3341,7 +3359,7 @@
       const selectedRoom = studyStartOptionToRoom(selectedOption);
 
       if (!isUnspecifiedRoom && !canStartStudyInRoom(selectedRoom)) {
-        setStudyStartMessage("この自習室は終了時間を過ぎているため選べません。", "error");
+        setStudyStartMessage("この自習室はまだ使える時間になっていないか、終了時間を過ぎているため選べません。", "error");
         await loadRooms();
         return;
       }
@@ -3454,7 +3472,11 @@
     requestRoom.addEventListener("change", syncSelectedRequestRoomDescription);
     requestForm.addEventListener("submit", handleRequestSubmit);
     if (studyStartForm) {
-      studyStartRoom.addEventListener("change", syncSelectedStudyStartRoomDescription);
+      studyStartRoom.addEventListener("change", () => {
+        buildStudyEndTimeOptions();
+        syncSelectedStudyStartRoomDescription();
+      });
+      studyEndTime.addEventListener("focus", buildStudyEndTimeOptions);
       studyStartForm.addEventListener("submit", handleStudyStartSubmit);
     }
     if (friendSearchForm) {

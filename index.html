@@ -108,8 +108,8 @@
             <input id="room-location" type="text">
             <select id="available-date"></select>
             <input id="capacity" type="number" value="20">
-            <input id="start-time" type="time">
-            <input id="end-time" type="time">
+            <select id="start-time" size="6"></select>
+            <select id="end-time" size="6" disabled></select>
             <textarea id="room-note"></textarea>
             <button id="room-submit" type="submit"></button>
             <p id="room-message"></p>
@@ -825,6 +825,46 @@
       }
     }
 
+    function appendTimeOptions(selectElement, startMinutes, endMinutes) {
+      for (let minutes = startMinutes; minutes <= endMinutes; minutes += 30) {
+        const hour = Math.floor(minutes / 60);
+        const minute = minutes % 60;
+        const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+        const option = document.createElement("option");
+        option.value = label;
+        option.textContent = label;
+        selectElement.appendChild(option);
+      }
+    }
+
+    function setTimePlaceholder(selectElement, placeholderText) {
+      selectElement.innerHTML = "";
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = placeholderText;
+      selectElement.appendChild(placeholder);
+    }
+
+    function buildRoomTimeOptions() {
+      setTimePlaceholder(startTime, "開始時間を選んでください");
+      appendTimeOptions(startTime, 6 * 60, 23 * 60 + 30);
+      updateRoomEndTimeOptions();
+    }
+
+    function updateRoomEndTimeOptions() {
+      setTimePlaceholder(endTime, startTime.value ? "終了時間を選んでください" : "開始時間を先に選んでください");
+
+      if (!startTime.value) {
+        endTime.disabled = true;
+        return;
+      }
+
+      const [hour, minute] = startTime.value.split(":").map(Number);
+      appendTimeOptions(endTime, hour * 60 + minute + 30, 24 * 60);
+      endTime.disabled = false;
+    }
+
     function updateRequestRoomOptions(rooms) {
       requestRoom.innerHTML = "";
       const requestableRooms = rooms.filter((room) => room.accepts_requests !== false);
@@ -1455,6 +1495,8 @@
         setRoomLoading(false);
         roomForm.reset();
         capacity.value = "20";
+        startTime.value = "";
+        updateRoomEndTimeOptions();
         syncSelectedRoomLocation();
         setRoomMessage("自習室を登録しました。", "success");
         await loadRooms();
@@ -1483,6 +1525,8 @@
 
       roomForm.reset();
       capacity.value = "20";
+      startTime.value = "";
+      updateRoomEndTimeOptions();
       syncSelectedRoomLocation();
       setRoomMessage("自習室を登録しました。", "success");
       await loadRooms();
@@ -1719,6 +1763,7 @@
     roomOptionList.addEventListener("click", handleRoomOptionLocationEdit);
     roomOptionList.addEventListener("change", handleRoomOptionSettingChange);
     roomName.addEventListener("change", syncSelectedRoomLocation);
+    startTime.addEventListener("change", updateRoomEndTimeOptions);
     requestRoom.addEventListener("change", syncSelectedRequestRoomDescription);
     requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);
@@ -1736,6 +1781,7 @@
     async function initApp() {
       buildDateOptions(availableDate, "日付を選んでください");
       buildDateOptions(requestDate, "希望日を選んでください");
+      buildRoomTimeOptions();
       buildRequestTimeOptions();
       updateRequestRoomOptions([]);
 

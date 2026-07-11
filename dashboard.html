@@ -668,6 +668,8 @@
     const friendMessage = document.getElementById("friend-message");
     const friendResults = document.getElementById("friend-results");
     const friendList = document.getElementById("friend-list");
+    const selfCommentText = document.getElementById("self-comment-text");
+    const selfCommentEdit = document.getElementById("self-comment-edit");
 
     let currentUser = null;
     let currentProfile = null;
@@ -764,6 +766,9 @@
       setText('#study-start-submit', '自習を開始する');
       setText('#friends-title', '友達');
       setText('#friends-panel .request-heading p:last-child', '生徒アカウントを名前で検索できます。');
+      setText('#self-comment-card h4', '自分のコメント');
+      setText('#self-comment-text', 'コメント');
+      setText('#self-comment-edit', '編集');
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
       setText('.friend-list-wrap h4', '友達');
@@ -896,7 +901,8 @@
           id: `local-${account.login_id}`,
           login_id: account.login_id,
           display_name: account.display_name,
-          role: account.role
+          role: account.role,
+          self_comment: account.self_comment || ""
         }
       };
       writeLocalJson(LOCAL_SESSION_KEY, session);
@@ -1908,6 +1914,7 @@
       updateStudyStartRoomOptions([]);
       renderStudyStatus(null);
       setStudyStartMessage("", "");
+      renderSelfComment();
       renderFriendResults([]);
       renderFriendList([]);
       setFriendMessage("", "");
@@ -1916,6 +1923,7 @@
     function renderLoggedIn(user, profile) {
       currentUser = user;
       currentProfile = profile;
+      renderSelfComment();
       const role = displayRoleForAccount(profile, user);
       const name = profile?.display_name || profile?.login_id || user.email;
 
@@ -2213,6 +2221,72 @@
       });
     }
 
+    function normalizeSelfComment(value) {
+      return String(value || "").trim().slice(0, 20);
+    }
+
+    function renderSelfComment() {
+      if (!selfCommentText) {
+        return;
+      }
+
+      const comment = normalizeSelfComment(currentProfile?.self_comment);
+      selfCommentText.textContent = comment || "コメント";
+      selfCommentText.title = comment || "コメント";
+    }
+
+    async function handleSelfCommentEdit() {
+      if (!currentUser || displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        setFriendMessage("エラーが発生しました。", "error");
+        return;
+      }
+
+      const currentComment = normalizeSelfComment(currentProfile?.self_comment);
+      const nextValue = window.prompt("自分のコメントを20字以内で入力してください。", currentComment);
+      if (nextValue === null) {
+        return;
+      }
+
+      const nextComment = String(nextValue || "").trim();
+      if (nextComment.length > 20) {
+        setFriendMessage("コメントは20字以内にしてください。", "error");
+        return;
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const accounts = getLocalAccounts();
+        const loginIdValue = currentProfile?.login_id || currentUser?.user_metadata?.login_id;
+        if (loginIdValue && accounts[loginIdValue]) {
+          accounts[loginIdValue].self_comment = nextComment;
+          saveLocalAccounts(accounts);
+        }
+        currentProfile = { ...currentProfile, self_comment: nextComment };
+        renderSelfComment();
+        setFriendMessage("コメントを変更しました。", "success");
+        return;
+      }
+
+      if (selfCommentEdit) {
+        selfCommentEdit.disabled = true;
+      }
+      const { error } = await appClient
+        .from("profiles")
+        .update({ self_comment: nextComment })
+        .eq("id", currentUser.id);
+      if (selfCommentEdit) {
+        selfCommentEdit.disabled = false;
+      }
+
+      if (error) {
+        setFriendMessage("コメントを変更できませんでした。Supabaseの設定を確認してください。", "error");
+        return;
+      }
+
+      currentProfile = { ...currentProfile, self_comment: nextComment };
+      renderSelfComment();
+      setFriendMessage("コメントを変更しました。", "success");
+    }
+
     function renderFriendList(friends) {
       if (!friendList) {
         return;
@@ -2231,7 +2305,7 @@
         const friendId = friend.friend_id || friend.id;
         const friendName = friend.display_name || friend.friend_name || "名前なし";
         const studyText = friend.study_status || "勉強状況";
-        const commentText = friend.comment || "コメント欄";
+        const commentText = friend.comment || "コメント";
 
         const nameWrap = document.createElement("div");
         nameWrap.className = "friend-name-block";
@@ -2331,18 +2405,32 @@
         return [];
       }
 
-      const localFriends = getLocalFriends().filter((friend) => friend.user_id === currentUser.id);
+      const localFriends = getLocalFriends().filter((friend) => (
+        friend.user_id === currentUser.id || String(friend.friend_id || friend.id) === String(currentUser.id)
+      ));
 
       if (String(currentUser.id).startsWith("local-")) {
-        currentFriends = localFriends;
-        renderFriendList(localFriends);
-        return localFriends;
+        const accounts = Object.values(getLocalAccounts());
+        const enrichedLocalFriends = localFriends.map((friend) => {
+          const otherId = friend.user_id === currentUser.id ? friend.friend_id : friend.user_id;
+          const account = accounts.find((item) => String(item.id || `local-${item.login_id}`) === String(otherId));
+          return {
+            ...friend,
+            id: otherId,
+            friend_id: otherId,
+            display_name: account?.display_name || friend.display_name || friend.friend_name,
+            comment: normalizeSelfComment(account?.self_comment)
+          };
+        });
+        currentFriends = enrichedLocalFriends;
+        renderFriendList(enrichedLocalFriends);
+        return enrichedLocalFriends;
       }
 
       const { data, error } = await appClient
         .from("student_friends")
-        .select("friend_id, friend_name, created_at")
-        .eq("user_id", currentUser.id)
+        .select("user_id, friend_id, friend_name, created_at")
+        .or(`user_id.eq.${currentUser.id},friend_id.eq.${currentUser.id}`)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -2352,11 +2440,35 @@
         return [];
       }
 
-      const remoteFriends = (data || []).map((friend) => ({
-        id: friend.friend_id,
-        display_name: friend.friend_name,
-        created_at: friend.created_at
-      }));
+      let remoteFriends = (data || []).map((friend) => {
+        const isOutgoing = String(friend.user_id) === String(currentUser.id);
+        const otherId = isOutgoing ? friend.friend_id : friend.user_id;
+        return {
+          id: otherId,
+          friend_id: otherId,
+          display_name: isOutgoing ? friend.friend_name : "",
+          created_at: friend.created_at
+        };
+      });
+
+      const friendIds = remoteFriends.map((friend) => friend.id).filter(Boolean);
+      if (friendIds.length) {
+        const { data: friendProfiles, error: profileError } = await appClient
+          .from("profiles")
+          .select("id, display_name, self_comment")
+          .in("id", friendIds);
+        if (!profileError) {
+          const profileById = new Map((friendProfiles || []).map((profile) => [String(profile.id), profile]));
+          remoteFriends = remoteFriends.map((friend) => {
+            const profile = profileById.get(String(friend.id));
+            return {
+              ...friend,
+              display_name: profile?.display_name || friend.display_name,
+              comment: normalizeSelfComment(profile?.self_comment)
+            };
+          });
+        }
+      }
       if (localFriends.length) {
         saveLocalFriends(getLocalFriends().filter((friend) => friend.user_id !== currentUser.id));
       }
@@ -2518,7 +2630,8 @@
       setFriendMessage("", "");
 
       const remainingLocalFriends = getLocalFriends().filter((friend) => !(
-        friend.user_id === currentUser.id && String(friend.friend_id || friend.id) === String(friendId)
+        (friend.user_id === currentUser.id && String(friend.friend_id || friend.id) === String(friendId))
+        || (String(friend.friend_id || friend.id) === String(currentUser.id) && String(friend.user_id) === String(friendId))
       ));
 
       if (String(currentUser.id).startsWith("local-")) {
@@ -2532,8 +2645,7 @@
       const { error } = await appClient
         .from("student_friends")
         .delete()
-        .eq("user_id", currentUser.id)
-        .eq("friend_id", friendId);
+        .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${currentUser.id})`);
 
       if (error) {
         saveLocalFriends(remainingLocalFriends);
@@ -2566,7 +2678,7 @@
     async function fetchProfile(user) {
       const { data, error } = await appClient
         .from("profiles")
-        .select("id, login_id, display_name, role")
+        .select("id, login_id, display_name, role, self_comment")
         .eq("id", user.id)
         .single();
 
@@ -2592,10 +2704,12 @@
         id: user.id,
         login_id: user.user_metadata?.login_id || user.email?.split("@")[0],
         display_name: user.user_metadata?.display_name || user.user_metadata?.login_id || user.email,
-        role: user.user_metadata?.role || "student"
+        role: user.user_metadata?.role || "student",
+        self_comment: ""
       };
 
-      const { error: upsertError } = await appClient.from("profiles").upsert(fallbackProfile);
+      const { self_comment: _comment, ...fallbackProfileForSave } = fallbackProfile;
+      const { error: upsertError } = await appClient.from("profiles").upsert(fallbackProfileForSave);
       if (upsertError && isConnectionError(upsertError)) {
         throw upsertError;
       }
@@ -3347,6 +3461,9 @@
       friendSearchForm.addEventListener("submit", handleFriendSearch);
       friendResults.addEventListener("click", handleFriendAdd);
       friendList.addEventListener("click", handleFriendRemove);
+    }
+    if (selfCommentEdit) {
+      selfCommentEdit.addEventListener("click", handleSelfCommentEdit);
     }
     refreshRooms.addEventListener("click", loadRooms);
     if (passwordToggle) {

@@ -9,6 +9,16 @@ create table if not exists public.profiles (
 alter table public.profiles
 add column if not exists login_id text unique;
 
+alter table public.profiles
+add column if not exists self_comment text not null default '';
+
+alter table public.profiles
+drop constraint if exists profiles_self_comment_length;
+
+alter table public.profiles
+add constraint profiles_self_comment_length
+check (char_length(self_comment) <= 20);
+
 create table if not exists public.study_rooms (
   id bigint generated always as identity primary key,
   room_name text not null,
@@ -318,7 +328,10 @@ create policy "Students can read own friends"
 on public.student_friends
 for select
 to authenticated
-using (user_id = auth.uid());
+using (
+  user_id = auth.uid()
+  or friend_id = auth.uid()
+);
 
 create policy "Students can create own friends"
 on public.student_friends
@@ -344,7 +357,10 @@ create policy "Students can delete own friends"
 on public.student_friends
 for delete
 to authenticated
-using (user_id = auth.uid());
+using (
+  user_id = auth.uid()
+  or friend_id = auth.uid()
+);
 
 create policy "Logged in users can read room plans"
 on public.study_room_plans
@@ -399,7 +415,7 @@ to authenticated
 using (user_id = auth.uid())
 with check (user_id = auth.uid());
 
-grant select on public.profiles to authenticated;
+grant select, insert, update on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
 grant select, insert, delete on public.study_room_plans to authenticated;
 

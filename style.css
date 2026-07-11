@@ -1075,6 +1075,38 @@ p {
   margin-top: 22px;
 }
 
+.self-comment-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #d8e5f4;
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.self-comment-card h4 {
+  margin-bottom: 4px;
+  color: #173b78;
+  font-size: 15px;
+}
+
+.self-comment-card p {
+  max-width: 28em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.self-comment-edit {
+  flex: 0 0 auto;
+}
+
 .friend-list-wrap h4 {
   margin-bottom: 10px;
   color: #173b78;
@@ -1268,8 +1300,19 @@ tr:last-child td {
   }
 
   .friend-search-row,
+  .self-comment-card,
   .friend-item {
     grid-template-columns: 1fr;
+  }
+
+  .self-comment-card {
+    display: grid;
+    align-items: flex-start;
+  }
+
+  .self-comment-card p {
+    max-width: 100%;
+    white-space: normal;
   }
 
   .friend-search-row {

@@ -1162,6 +1162,37 @@
       endTime.disabled = false;
     }
 
+    function hasOptionValue(selectElement, value) {
+      return [...selectElement.options].some((option) => option.value === value);
+    }
+
+    function ensureRoomScheduleControls() {
+      const previousDate = availableDate.value;
+      const previousStart = startTime.value;
+      const previousEnd = endTime.value;
+
+      buildDateOptions(availableDate, "日付を選んでください");
+      buildRoomTimeOptions();
+
+      if (previousDate && hasOptionValue(availableDate, previousDate)) {
+        availableDate.value = previousDate;
+      }
+
+      if (previousStart && hasOptionValue(startTime, previousStart)) {
+        startTime.value = previousStart;
+      }
+
+      updateRoomEndTimeOptions();
+
+      if (previousEnd && hasOptionValue(endTime, previousEnd)) {
+        endTime.value = previousEnd;
+      }
+
+      availableDate.disabled = false;
+      startTime.disabled = false;
+      endTime.disabled = !startTime.value;
+    }
+
     function updateRequestRoomOptions(rooms) {
       requestRoom.innerHTML = "";
       const requestableRooms = rooms.filter((room) => room.accepts_requests !== false);
@@ -1434,6 +1465,9 @@
       requestSubmit.textContent = role === "teacher" ? "受け付ける" : "希望を送る";
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
+      if (isDashboardPage && role === "teacher") {
+        ensureRoomScheduleControls();
+      }
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
       dashboardNote.textContent = role === "teacher" ? "自習に使える部屋を登録できます。" : "登録された自習室を確認できます。";

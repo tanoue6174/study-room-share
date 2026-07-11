@@ -1030,17 +1030,32 @@
         return;
       }
 
-      const { data, error } = await appClient
+      let { data, error } = await appClient
         .from("study_room_options")
         .select("id, room_name, location, accepts_requests, created_by, created_at")
         .order("room_name", { ascending: true });
 
       if (error) {
-        renderRoomOptions([]);
-        setRoomOptionMessage("部屋設定を読み込めませんでした。Supabaseのテーブル設定を確認してください。", "error");
-        return;
+        const fallbackResult = await appClient
+          .from("study_room_options")
+          .select("id, room_name, location, created_at")
+          .order("room_name", { ascending: true });
+        data = (fallbackResult.data || []).map((option) => ({
+          ...option,
+          accepts_requests: true,
+          created_by: currentUser.id
+        }));
+        error = fallbackResult.error;
+
+        if (error) {
+          renderRoomOptions([]);
+          updateRequestRoomOptions([]);
+          setRoomOptionMessage("部屋設定を読み込めませんでした。ページを再読み込みしてください。続く場合はSupabaseのテーブル設定を確認してください。", "error");
+          return;
+        }
       }
 
+      setRoomOptionMessage("", "");
       const options = data || [];
       const ownOptions = displayRoleForAccount(currentProfile, currentUser) === "teacher"
         ? options.filter((option) => option.created_by === currentUser.id)
@@ -1634,7 +1649,8 @@
           return;
         }
         const id = getPasswordCredential();
-        signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
+        const name = displayName.value.trim();
+        signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
         return;
       }
 
@@ -1663,7 +1679,7 @@
 
         if (error) {
           if (shouldUseLocalPasswordAccount(error)) {
-            signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
+            signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
             return;
           }
           setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");
@@ -1674,7 +1690,7 @@
       } catch (error) {
         setAuthLoading(false);
         if (shouldUseLocalPasswordAccount(error)) {
-          signInWithPasswordFallback(id, "", "Supabaseに接続できないため、この端末内でログインしました。");
+          signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
           return;
         }
         setAuthMessage(`ログインできませんでした。理由: ${toJapaneseAuthError(error)}`, "error");

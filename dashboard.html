@@ -1559,13 +1559,33 @@
       return `${date} ${room.room_name} ${start}-${end}`;
     }
 
+    function canStartStudyInRoom(room) {
+      const roomEndAt = roomEndDateTime(room);
+      return Boolean(roomEndAt && roomEndAt >= new Date());
+    }
+
+    function studyStartOptionToRoom(option) {
+      if (!option || option.value === "unspecified") {
+        return null;
+      }
+
+      return {
+        id: option.value,
+        room_name: option.dataset.roomName || option.textContent,
+        location: option.dataset.location || "",
+        available_date: option.dataset.availableDate || "",
+        start_time: option.dataset.startTime || "",
+        end_time: option.dataset.endTime || ""
+      };
+    }
+
     function updateStudyStartRoomOptions(rooms) {
       if (!studyStartRoom) {
         return;
       }
 
       studyStartRoom.innerHTML = "";
-      const usableRooms = rooms || [];
+      const usableRooms = (rooms || []).filter(canStartStudyInRoom);
 
       const placeholder = document.createElement("option");
       placeholder.value = "";
@@ -3112,6 +3132,13 @@
         return;
       }
       const isUnspecifiedRoom = studyStartRoom.value === "unspecified";
+      const selectedRoom = studyStartOptionToRoom(selectedOption);
+
+      if (!isUnspecifiedRoom && !canStartStudyInRoom(selectedRoom)) {
+        setStudyStartMessage("この自習室は終了時間を過ぎているため選べません。", "error");
+        await loadRooms();
+        return;
+      }
 
       const payload = {
         user_id: currentUser.id,
@@ -3131,6 +3158,10 @@
         ));
         sessions.push({ ...payload, id: Date.now() });
         saveLocalStudySessions(sessions);
+        if (!isUnspecifiedRoom) {
+          await saveRoomPlan(selectedRoom, true);
+          await loadRooms();
+        }
         renderStudyStatus(payload);
         setStudyStartMessage("自習を開始しました。", "success");
         return;
@@ -3151,7 +3182,17 @@
         return;
       }
 
+      let planError = null;
+      if (!isUnspecifiedRoom) {
+        const planResult = await saveRoomPlan(selectedRoom, true);
+        planError = planResult.error;
+        await loadRooms();
+      }
       await loadStudySession();
+      if (planError) {
+        setStudyStartMessage("自習を開始しましたが、使える自習室の〇を更新できませんでした。", "error");
+        return;
+      }
       setStudyStartMessage("自習を開始しました。", "success");
     }
 

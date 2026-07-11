@@ -88,8 +88,8 @@
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
             <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
             <span class="school-banner" id="school-banner" hidden>ある学校</span>
-            <span class="user-name-label" id="user-name-label" hidden></span>
             <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
+            <span class="user-name-label" id="user-name-label" hidden></span>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
@@ -719,7 +719,21 @@
 
     function isSchoolLogin(profile, user) {
       const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-      return loginId === "STUDENT_PASSWORD_REDACTED" || loginId === "TEACHER_PASSWORD_REDACTED";
+      return loginId === "study2026" || loginId === "teach2026";
+    }
+
+    function displayRoleForAccount(profile, user) {
+      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
+
+      if (loginId === "study2026") {
+        return "student";
+      }
+
+      if (loginId === "teach2026") {
+        return "teacher";
+      }
+
+      return profile?.role || user?.user_metadata?.role || "student";
     }
 
     function renderLoggedOut() {
@@ -754,11 +768,11 @@
     function renderLoggedIn(user, profile) {
       currentUser = user;
       currentProfile = profile;
-      const role = profile?.role || "student";
+      const role = displayRoleForAccount(profile, user);
       const name = profile?.display_name || profile?.login_id || user.email;
 
       authStatus.textContent = `${name} さん（${roleLabel(role)}）でログイン中です。`;
-      userNameLabel.textContent = `${name} さん`;
+      userNameLabel.textContent = `${name} さん（${roleLabel(role)}）`;
       userNameLabel.hidden = !isDashboardPage;
       signoutButton.hidden = false;
       signupButton.hidden = true;

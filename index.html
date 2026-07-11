@@ -87,6 +87,7 @@
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
             <button class="button auth-button-strong" id="signin-button" type="submit">ログイン</button>
             <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
+            <span class="user-name-label" id="user-name-label" hidden></span>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
@@ -337,6 +338,7 @@
     const signupButton = document.getElementById("signup-button");
     const signinButton = document.getElementById("signin-button");
     const signoutButton = document.getElementById("signout-button");
+    const userNameLabel = document.getElementById("user-name-label");
     const roleSummary = document.getElementById("role-summary");
     const dashboardTitle = document.getElementById("dashboard-title");
     const dashboardNote = document.getElementById("dashboard-note");
@@ -662,11 +664,27 @@
       return role === "teacher" ? "先生" : "生徒";
     }
 
+    function displayRoleForAccount(profile, user) {
+      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
+
+      if (loginId === "study2026") {
+        return "student";
+      }
+
+      if (loginId === "teach2026") {
+        return "teacher";
+      }
+
+      return profile?.role || user?.user_metadata?.role || "student";
+    }
+
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
+      userNameLabel.hidden = true;
+      userNameLabel.textContent = "";
       roomForm.hidden = true;
       if (roomLayout) {
         roomLayout.hidden = true;
@@ -691,10 +709,12 @@
     function renderLoggedIn(user, profile) {
       currentUser = user;
       currentProfile = profile;
-      const role = profile?.role || "student";
+      const role = displayRoleForAccount(profile, user);
       const name = profile?.display_name || profile?.login_id || user.email;
 
       authStatus.textContent = `${name} さん（${roleLabel(role)}）でログイン中です。`;
+      userNameLabel.textContent = `${name} さん（${roleLabel(role)}）`;
+      userNameLabel.hidden = false;
       signoutButton.hidden = false;
       signupButton.hidden = true;
       signinButton.hidden = true;

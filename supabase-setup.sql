@@ -151,10 +151,7 @@ for select
 to authenticated
 using (
   id = auth.uid()
-  or (
-    role = 'student'
-    and coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'student'
-  )
+  or role = 'student'
 );
 
 create policy "Logged in users can read study rooms"
@@ -308,3 +305,6 @@ with check (
       and friend_profile.role = 'student'
   )
 );
+
+grant select on public.profiles to authenticated;
+grant select, insert on public.student_friends to authenticated;

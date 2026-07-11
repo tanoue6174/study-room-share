@@ -18,7 +18,13 @@ create policy "Students can search student profiles"
 on public.profiles
 for select
 to authenticated
-using (role = 'student' or id = auth.uid());
+using (
+  id = auth.uid()
+  or (
+    role = 'student'
+    and coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'student'
+  )
+);
 
 create policy "Students can read own friends"
 on public.student_friends

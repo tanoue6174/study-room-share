@@ -149,7 +149,13 @@ create policy "Students can search student profiles"
 on public.profiles
 for select
 to authenticated
-using (role = 'student');
+using (
+  id = auth.uid()
+  or (
+    role = 'student'
+    and coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'student'
+  )
+);
 
 create policy "Logged in users can read study rooms"
 on public.study_rooms

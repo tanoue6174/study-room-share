@@ -414,6 +414,10 @@
             state.filters.push(`${encodeURIComponent(column)}=ilike.${encodeURIComponent(value)}`);
             return builder;
           },
+          or(expression) {
+            state.filters.push(`or=${encodeURIComponent(`(${expression})`)}`);
+            return builder;
+          },
           order(column, options) {
             const direction = options?.ascending === false ? "desc" : "asc";
             state.orders.push(`${column}.${direction}`);
@@ -1800,7 +1804,12 @@
     }
 
     async function searchFriendsByName(query) {
+      if (displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        return { data: [], error: null };
+      }
+
       if (String(currentUser.id).startsWith("local-")) {
+        const normalizedQuery = query.toLowerCase();
         const accounts = Object.values(getLocalAccounts())
           .map((account) => normalizeFriendProfile({
             id: account.id || `local-${account.login_id}`,
@@ -1810,7 +1819,10 @@
           }))
           .filter((account) => account.role === "student")
           .filter((account) => account.id !== currentUser.id)
-          .filter((account) => account.display_name.toLowerCase().includes(query.toLowerCase()));
+          .filter((account) => (
+            account.display_name.toLowerCase().includes(normalizedQuery) ||
+            String(account.login_id || "").toLowerCase().includes(normalizedQuery)
+          ));
         return { data: accounts, error: null };
       }
 
@@ -1819,7 +1831,7 @@
         .select("id, login_id, display_name, role")
         .eq("role", "student")
         .neq("id", currentUser.id)
-        .ilike("display_name", `%${query}%`)
+        .or(`display_name.ilike.%${query}%,login_id.ilike.%${query}%`)
         .order("display_name", { ascending: true });
     }
 

@@ -1661,6 +1661,10 @@
           const roomCell = document.createElement("td");
           const countCell = document.createElement("td");
 
+          timeCell.dataset.label = "時間";
+          roomCell.dataset.label = "部屋";
+          countCell.dataset.label = "希望人数";
+
           timeCell.textContent = `${formatSelectedDate(item.request_date)} ${item.request_time}`;
           roomCell.textContent = item.room_location;
           countCell.textContent = `${item.count}人`;

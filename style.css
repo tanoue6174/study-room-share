@@ -1062,4 +1062,65 @@ tr:last-child td {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .request-summary .table-wrap {
+    overflow-x: visible;
+  }
+
+  .request-summary table,
+  .request-summary thead,
+  .request-summary tbody,
+  .request-summary tr,
+  .request-summary td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .request-summary thead {
+    display: none;
+  }
+
+  .request-summary tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .request-summary tr {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .request-summary td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .request-summary td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #173b78;
+    font-weight: 900;
+    text-align: left;
+  }
+
+  .request-summary td:last-child {
+    border-bottom: 0;
+  }
+
+  .request-summary td[colspan] {
+    display: block;
+    text-align: left;
+  }
+
+  .request-summary td[colspan]::before {
+    content: "";
+  }
 }

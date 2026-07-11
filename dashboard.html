@@ -1452,23 +1452,17 @@
       studyStartRoom.innerHTML = "";
       const usableRooms = rooms || [];
 
-      if (!usableRooms.length) {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "登録されている部屋がありません";
-        studyStartRoom.appendChild(option);
-        studyStartRoom.disabled = true;
-        if (studyStartSubmit) {
-          studyStartSubmit.disabled = true;
-        }
-        syncSelectedStudyStartRoomDescription();
-        return;
-      }
-
       const placeholder = document.createElement("option");
       placeholder.value = "";
       placeholder.textContent = "部屋を選んでください";
       studyStartRoom.appendChild(placeholder);
+
+      const unspecifiedOption = document.createElement("option");
+      unspecifiedOption.value = "unspecified";
+      unspecifiedOption.textContent = "指定なし";
+      unspecifiedOption.dataset.roomName = "指定なし";
+      unspecifiedOption.dataset.location = "";
+      studyStartRoom.appendChild(unspecifiedOption);
 
       usableRooms.forEach((room) => {
         const option = document.createElement("option");
@@ -2314,6 +2308,7 @@
       if (!currentUser) {
         roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
         updateRequestRoomOptions([]);
+        updateStudyStartRoomOptions([]);
         return;
       }
 
@@ -2909,10 +2904,11 @@
         setStudyStartMessage("部屋を選んでください。", "error");
         return;
       }
+      const isUnspecifiedRoom = studyStartRoom.value === "unspecified";
 
       const payload = {
         user_id: currentUser.id,
-        room_id: Number(studyStartRoom.value),
+        room_id: isUnspecifiedRoom ? null : Number(studyStartRoom.value),
         room_name: selectedOption.dataset.roomName || selectedOption.textContent,
         location: selectedOption.dataset.location || "",
         ends_at: studyEndTime.value || null,

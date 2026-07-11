@@ -1876,6 +1876,10 @@
                     const ids = getPlannedRoomIds();
                     const nextState = !ids.has(roomKey);
 
+                    if (!nextState && !window.confirm("自習室に行く予定を取りやめますか？")) {
+                      return;
+                    }
+
                     if (nextState) {
                       ids.add(roomKey);
                     } else {

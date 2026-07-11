@@ -289,7 +289,7 @@
         <div class="friend-list-wrap">
           <h4>友達</h4>
           <div class="friend-list" id="friend-list" aria-live="polite">
-            <p class="empty-rooms">まだ友達はいません。</p>
+            <p class="empty-rooms">いません</p>
           </div>
         </div>
       </section>
@@ -781,7 +781,7 @@
       setText('#room-list .empty-rooms', 'ログインすると自習室リストを確認できます。');
       setText('#room-option-list .empty-rooms', 'まだ部屋が設定されていません。');
       setText('#friend-results .empty-rooms', '名前を入力して検索してください。');
-      setText('#friend-list .empty-rooms', 'まだ友達はいません。');
+      setText('#friend-list .empty-rooms', 'いません');
       setText('.footer p', 'Study Room Share | 自習場所共有アプリ');
     }
     localizeStaticText();
@@ -2139,7 +2139,7 @@
       friendList.innerHTML = "";
 
       if (!friends.length) {
-        friendList.innerHTML = '<p class="empty-rooms">まだ友達はいません。</p>';
+        friendList.innerHTML = '<p class="empty-rooms">いません</p>';
         return;
       }
 

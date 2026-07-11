@@ -92,6 +92,7 @@ main {
 .dashboard-page #auth-form > label,
 .dashboard-page #auth-form > input,
 .dashboard-page #auth-form > select,
+.dashboard-page #auth-form > .password-field,
 .dashboard-page #auth-form > .field-help,
 .dashboard-page #signup-button,
 .dashboard-page #signin-button,
@@ -345,8 +346,36 @@ p {
   font: inherit;
 }
 
+.password-field {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.password-field input {
+  min-width: 0;
+}
+
+.password-toggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #173b78;
+  background: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.password-toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .auth-form input:focus,
-.auth-form select:focus {
+.auth-form select:focus,
+.password-toggle:focus {
   outline: 3px solid rgba(47, 111, 237, 0.18);
   border-color: var(--blue);
 }

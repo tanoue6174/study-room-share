@@ -80,7 +80,10 @@
           <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" hidden aria-hidden="true">
 
           <label for="account-password">パスワード</label>
-          <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
+          <div class="password-field">
+            <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
+            <button class="password-toggle" id="password-toggle" type="button" aria-label="パスワードを表示">表示</button>
+          </div>
 
           <div class="auth-actions">
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
@@ -382,6 +385,7 @@
     const accountRole = document.getElementById("account-role");
     const loginId = document.getElementById("login-id");
     const accountPassword = document.getElementById("account-password");
+    const passwordToggle = document.getElementById("password-toggle");
     const authStatus = document.getElementById("auth-status");
     const authMessage = document.getElementById("auth-message");
     const signupButton = document.getElementById("signup-button");
@@ -742,6 +746,7 @@
       accountRole.disabled = false;
       loginId.disabled = false;
       accountPassword.disabled = false;
+      passwordToggle.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
       updateRequestRoomOptions([]);
       setRequestMessage("", "");
@@ -764,6 +769,7 @@
       accountRole.disabled = true;
       loginId.disabled = true;
       accountPassword.disabled = true;
+      passwordToggle.disabled = true;
       roleSummary.hidden = !isDashboardPage;
       schoolBanner.hidden = !isDashboardPage || !isSchoolLogin(profile, user);
       if (roomLayout) {
@@ -1166,6 +1172,12 @@
     roomForm.addEventListener("submit", handleRoomSubmit);
     requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);
+    passwordToggle.addEventListener("click", () => {
+      const shouldShow = accountPassword.type === "password";
+      accountPassword.type = shouldShow ? "text" : "password";
+      passwordToggle.textContent = shouldShow ? "非表示" : "表示";
+      passwordToggle.setAttribute("aria-label", shouldShow ? "パスワードを隠す" : "パスワードを表示");
+    });
 
     appClient.auth.onAuthStateChange((_event, session) => {
       handleSession(session);

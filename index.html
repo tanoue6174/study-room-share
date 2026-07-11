@@ -70,7 +70,7 @@
         </div>
         <form class="auth-form" id="auth-form">
           <label for="display-name">名前</label>
-          <input id="display-name" name="display-name" type="text" maxlength="40" autocomplete="name">
+          <input id="display-name" name="display-name" type="text" maxlength="40" autocomplete="name" placeholder="学校内で使う名前" required>
 
           <select id="account-role" name="account-role" hidden aria-hidden="true">
             <option value="student">生徒</option>
@@ -79,9 +79,10 @@
 
           <label for="account-password">パスワード</label>
           <div class="password-field">
-            <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
+            <input id="account-password" name="account-password" type="password" autocomplete="current-password" placeholder="先生: teach2026 / 生徒: study2026" required>
             <button class="password-toggle" id="password-toggle" type="button" aria-label="パスワードを表示">表示</button>
           </div>
+          <p class="field-help">ある学校の先生は teach2026、生徒は study2026 で登録・ログインします。</p>
 
           <div class="auth-actions">
             <button class="button auth-button-strong" id="signup-button" type="button">アカウント作成</button>
@@ -616,6 +617,16 @@
       return "";
     }
 
+    function roleFromLoginId(value) {
+      if (String(value || "").startsWith("teacher-")) {
+        return "teacher";
+      }
+      if (String(value || "").startsWith("student-")) {
+        return "student";
+      }
+      return roleFromPassword(value);
+    }
+
     function toJapaneseAuthError(error) {
       const message = String(error?.message || "").toLowerCase();
       const status = error?.status;
@@ -657,6 +668,11 @@
 
     function getAuthInputProblem() {
       const password = getPasswordCredential();
+      const name = displayName.value.trim();
+
+      if (!name) {
+        return "名前を入力してください。";
+      }
 
       if (!password) {
         return "パスワードが入力されていません。";
@@ -789,11 +805,17 @@
     function syncSelectedRoomLocation() {
       const selectedOption = roomName.options?.[roomName.selectedIndex];
       roomLocation.value = selectedOption?.dataset.location || "";
+      roomSubmit.disabled = !hasSelectedRoomOption();
     }
 
     function selectedRoomAcceptsRequests() {
       const selectedOption = roomName.options?.[roomName.selectedIndex];
       return selectedOption?.dataset.acceptsRequests !== "false";
+    }
+
+    function hasSelectedRoomOption() {
+      const selectedOption = roomName.options?.[roomName.selectedIndex];
+      return Boolean(roomName.value && selectedOption?.dataset.id);
     }
 
     function renderRoomOptionChoices(options) {
@@ -802,6 +824,8 @@
       const placeholder = document.createElement("option");
       placeholder.value = "";
       placeholder.textContent = options.length ? "部屋を選んでください" : "下の部屋設定で部屋を追加してください";
+      placeholder.disabled = true;
+      placeholder.selected = true;
       roomName.appendChild(placeholder);
 
       options.forEach((optionItem) => {
@@ -1098,7 +1122,7 @@
 
       if (!error && data) {
         const loginId = data.login_id || user.user_metadata?.login_id || user.email?.split("@")[0] || "";
-        const expectedRole = roleFromPassword(loginId);
+        const expectedRole = roleFromLoginId(loginId);
         if (expectedRole && data.role !== expectedRole) {
           const correctedProfile = { ...data, role: expectedRole };
           await appClient.from("profiles").upsert(correctedProfile);
@@ -1116,6 +1140,22 @@
 
       await appClient.from("profiles").upsert(fallbackProfile);
       return fallbackProfile;
+    }
+
+    async function ensureProfile(user, profile) {
+      if (!user || String(user.id || "").startsWith("local-")) {
+        return null;
+      }
+
+      const profilePayload = {
+        id: user.id,
+        login_id: profile.login_id,
+        display_name: profile.display_name,
+        role: profile.role
+      };
+
+      await appClient.from("profiles").upsert(profilePayload);
+      return profilePayload;
     }
 
     async function loadRooms() {
@@ -1153,7 +1193,7 @@
           return;
         }
         const id = getPasswordCredential();
-        const name = displayName.value.trim() || roleLabel(roleFromPassword(id));
+        const name = displayName.value.trim();
         signInWithPasswordFallback(id, name, "Supabaseに接続できないため、この端末内でログインしました。");
         return;
       }
@@ -1169,7 +1209,7 @@
       const id = getPasswordCredential();
       const password = id;
       const role = roleFromPassword(id);
-      const name = displayName.value.trim() || roleLabel(role);
+      const name = displayName.value.trim();
       const email = loginIdToEmail(makeAccountLoginId(id, name));
 
       setAuthLoading(true);
@@ -1200,6 +1240,11 @@
         }
 
         if (data.session) {
+          await ensureProfile(data.session.user, {
+            login_id: makeAccountLoginId(id, name),
+            display_name: name,
+            role
+          });
           setAuthMessage("アカウントを作成してログインしました。", "success");
         } else {
           signInWithPasswordFallback(id, name, "Supabaseのメール確認が必要なため、この端末内でアカウントを作成してログインしました。");
@@ -1312,8 +1357,9 @@
         return;
       }
 
-      if (!roomName.value) {
+      if (!hasSelectedRoomOption()) {
         setRoomMessage("先に下の部屋設定で部屋を追加してください。", "error");
+        roomName.reportValidity();
         return;
       }
 

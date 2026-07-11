@@ -1105,11 +1105,17 @@ p {
 
 .self-comment-edit {
   flex: 0 0 auto;
-  border: 0;
+  border: 1px solid var(--green);
   background: var(--green);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
+  box-shadow: 0 4px 10px rgba(47, 160, 95, 0.22);
+}
+
+.self-comment-edit:hover {
+  background: #26844f;
+  border-color: #26844f;
 }
 
 .friend-list-wrap h4 {

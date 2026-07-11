@@ -1105,6 +1105,11 @@ p {
 
 .self-comment-edit {
   flex: 0 0 auto;
+  border: 0;
+  background: var(--green);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
 }
 
 .friend-list-wrap h4 {

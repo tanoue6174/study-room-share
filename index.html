@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ</title>
-  <link rel="stylesheet" href="style.css?v=20260711-japanese-labels">
+  <link rel="stylesheet" href="style.css?v=20260711-planned-circle-text">
 </head>
 <body>
   <header class="site-header">
@@ -476,6 +476,7 @@
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
     const LOCAL_ROOM_OPTIONS_KEY = "study-room-share-local-room-options";
+    const PLANNED_ROOMS_KEY = "study-room-share-planned-rooms";
     const ROLE_PASSWORDS = {
       student: ["stu", "dy", "2026"].join(""),
       teacher: ["tea", "ch", "2026"].join("")
@@ -551,18 +552,18 @@
       setText('.request-summary th:nth-child(1)', '時間');
       setText('.request-summary th:nth-child(2)', '部屋');
       setText('.request-summary th:nth-child(3)', '希望人数');
-      setText('#friends-title', '友達');
+      setText('#friends-title', 'フレンド');
       setText('#friends-panel .request-heading p:last-child', '生徒アカウントを名前で検索できます。');
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
-      setText('.friend-list-wrap h4', '友達');
+      setText('.friend-list-wrap h4', 'フレンド');
       setPlaceholder('#display-name', '学校内で使う名前');
       setPlaceholder('#account-password', 'パスワード');
       setPlaceholder('#room-location', '場所説明');
       setPlaceholder('#room-note', '例: 静かに自習したい人向け');
       setPlaceholder('#room-option-name', '例: CAD室');
       setPlaceholder('#room-option-location', '例: 3階東側');
-      setPlaceholder('#friend-search', '友達の名前');
+      setPlaceholder('#friend-search', 'フレンドの名前');
       const purposeSection = document.querySelector('main > section.section:not(.app-section)');
       if (purposeSection) {
         purposeSection.innerHTML = `
@@ -584,7 +585,7 @@
       setText('#room-list .empty-rooms', 'ログインすると自習室リストを確認できます。');
       setText('#room-option-list .empty-rooms', 'まだ部屋が設定されていません。');
       setText('#friend-results .empty-rooms', '名前を入力して検索してください。');
-      setText('#friend-list .empty-rooms', 'まだ友達はいません。');
+      setText('#friend-list .empty-rooms', 'まだフレンドはいません。');
       setText('.footer p', 'Study Room Share | 自習場所共有アプリ');
     }
     localizeStaticText();
@@ -751,6 +752,32 @@
       writeLocalJson(LOCAL_ROOM_OPTIONS_KEY, options);
     }
 
+    function getPlannedRoomIds() {
+      return new Set(readLocalJson(PLANNED_ROOMS_KEY, []));
+    }
+
+    function savePlannedRoomIds(ids) {
+      writeLocalJson(PLANNED_ROOMS_KEY, Array.from(ids));
+    }
+
+    function plannedRoomKey(room) {
+      return [
+        room.id || room.room_name,
+        room.available_date,
+        String(room.start_time).slice(0, 5),
+        String(room.end_time).slice(0, 5)
+      ].join("|");
+    }
+
+    function setPlannedRoomState(item, button, isPlanned) {
+      item.classList.toggle("is-planned-room", isPlanned);
+      button.classList.toggle("is-selected", isPlanned);
+      button.textContent = isPlanned ? "●" : "○";
+      button.setAttribute("aria-pressed", String(isPlanned));
+      button.setAttribute("aria-label", isPlanned ? "自習室に行く予定を取り消す" : "自習室に行く予定にする");
+      button.title = isPlanned ? "自習室に行く予定" : "自習室に行く予定にする";
+    }
+
     function makeAccountLoginId(password, name) {
       const role = roleFromPassword(password);
       const trimmedName = name.trim();
@@ -854,7 +881,7 @@
         return "パスワードを入力してください。";
       }
       if (!roleFromPassword(password)) {
-        return "パスワードが違います。";
+        return "先生は teach2026、生徒は study2026 を入力してください。";
       }
       return "";
     }
@@ -1434,6 +1461,10 @@
             .forEach((room) => {
               const item = document.createElement("article");
               item.className = "room-item";
+              const role = displayRoleForAccount(currentProfile, currentUser);
+              const roomKey = plannedRoomKey(room);
+              const plannedRoomIds = getPlannedRoomIds();
+              const isPlannedRoom = plannedRoomIds.has(roomKey);
 
               const timeCell = document.createElement("div");
               timeCell.className = "room-list-cell room-time-cell";
@@ -1445,7 +1476,34 @@
               const timeValue = document.createElement("strong");
               timeValue.textContent = `${room.start_time.slice(0, 5)}-${room.end_time.slice(0, 5)}`;
 
-              timeCell.append(timeLabel, timeValue);
+              if (role === "student") {
+                const valueWrap = document.createElement("div");
+                valueWrap.className = "room-time-value";
+
+                const plannedButton = document.createElement("button");
+                plannedButton.className = "planned-room-toggle";
+                plannedButton.type = "button";
+                setPlannedRoomState(item, plannedButton, isPlannedRoom);
+
+                plannedButton.addEventListener("click", () => {
+                  const ids = getPlannedRoomIds();
+                  const nextState = !ids.has(roomKey);
+
+                  if (nextState) {
+                    ids.add(roomKey);
+                  } else {
+                    ids.delete(roomKey);
+                  }
+
+                  savePlannedRoomIds(ids);
+                  setPlannedRoomState(item, plannedButton, nextState);
+                });
+
+                valueWrap.append(timeValue, plannedButton);
+                timeCell.append(timeLabel, valueWrap);
+              } else {
+                timeCell.append(timeLabel, timeValue);
+              }
               item.appendChild(timeCell);
 
               const titleCell = document.createElement("div");

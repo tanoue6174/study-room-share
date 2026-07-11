@@ -607,6 +607,17 @@ p {
   background: #fbfdff;
 }
 
+.room-item.is-planned-room {
+  border-color: #84d79d;
+  background: #f0fff4;
+}
+
+.room-item.is-planned-room .room-list-label,
+.room-item.is-planned-room .room-list-cell strong,
+.room-item.is-planned-room .room-name-toggle {
+  color: #16833a;
+}
+
 .room-list-cell {
   min-width: 0;
 }
@@ -637,6 +648,43 @@ p {
   font-size: 16px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.room-time-value {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.planned-room-toggle {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 2px solid #84d79d;
+  border-radius: 50%;
+  background: #f8fff9;
+  color: #24a148;
+  cursor: pointer;
+  padding: 0;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-grid;
+  place-items: center;
+  box-shadow: 0 1px 4px rgba(22, 131, 58, 0.18);
+}
+
+.planned-room-toggle.is-selected {
+  border-color: #22a447;
+  background: #eaffef;
+  color: #16833a;
+  box-shadow: 0 2px 8px rgba(22, 131, 58, 0.28);
+}
+
+.planned-room-toggle:focus-visible {
+  outline: 3px solid rgba(34, 164, 71, 0.25);
+  outline-offset: 3px;
 }
 
 .room-name-toggle {

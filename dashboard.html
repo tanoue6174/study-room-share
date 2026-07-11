@@ -2016,13 +2016,30 @@
         item.className = "friend-item is-added";
         const friendId = friend.friend_id || friend.id;
         const friendName = friend.display_name || friend.friend_name || "名前なし";
+        const studyText = friend.study_status || "勉強状況";
+        const commentText = friend.comment || "コメント欄";
 
         const nameWrap = document.createElement("div");
+        nameWrap.className = "friend-name-block";
         const name = document.createElement("strong");
         name.textContent = friendName;
         const meta = document.createElement("span");
         meta.textContent = "生徒";
         nameWrap.append(name, meta);
+
+        const statusWrap = document.createElement("div");
+        statusWrap.className = "friend-status-block";
+
+        const status = document.createElement("span");
+        status.className = "friend-study-status";
+        status.textContent = studyText;
+
+        const comment = document.createElement("span");
+        comment.className = "friend-comment-preview";
+        comment.textContent = commentText;
+        comment.title = commentText;
+
+        statusWrap.append(status, comment);
 
         const removeButton = document.createElement("button");
         removeButton.className = "friend-remove-button";
@@ -2031,7 +2048,7 @@
         removeButton.dataset.friendName = friendName;
         removeButton.textContent = "解除";
 
-        item.append(nameWrap, removeButton);
+        item.append(nameWrap, statusWrap, removeButton);
         friendList.appendChild(item);
       });
     }

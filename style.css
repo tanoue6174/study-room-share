@@ -1051,8 +1051,8 @@ p {
 }
 
 .friend-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.3fr) auto;
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
@@ -1066,6 +1066,11 @@ p {
   display: block;
 }
 
+.friend-name-block,
+.friend-status-block {
+  min-width: 0;
+}
+
 .friend-item strong {
   color: #173b78;
 }
@@ -1075,6 +1080,30 @@ p {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
+}
+
+.friend-status-block {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #d8e5f4;
+  border-radius: 8px;
+  background: #f7fbff;
+}
+
+.friend-study-status {
+  margin-top: 0;
+  color: #173b78;
+}
+
+.friend-comment-preview {
+  max-width: 20em;
+  min-height: 1.4em;
+  margin-top: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .friend-add-button {
@@ -1218,7 +1247,7 @@ tr:last-child td {
 
   .friend-item {
     align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .room-item {

@@ -67,6 +67,35 @@ alter column room_id drop not null;
 alter table public.study_requests
 add column if not exists room_option_id bigint references public.study_room_options(id) on delete cascade;
 
+alter table public.study_requests
+add column if not exists room_location text;
+
+alter table public.study_requests
+add column if not exists request_date date;
+
+alter table public.study_requests
+add column if not exists request_time text;
+
+alter table public.study_requests
+add column if not exists created_by uuid references auth.users(id) on delete cascade;
+
+update public.study_requests
+set room_location = coalesce(
+  room_location,
+  (
+    select study_room_options.location
+    from public.study_room_options
+    where study_room_options.id = study_requests.room_option_id
+  ),
+  (
+    select study_rooms.location
+    from public.study_rooms
+    where study_rooms.id = study_requests.room_id
+  ),
+  '場所未設定'
+)
+where room_location is null;
+
 alter table public.profiles enable row level security;
 alter table public.study_rooms enable row level security;
 alter table public.study_room_options enable row level security;

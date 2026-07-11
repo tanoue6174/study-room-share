@@ -562,6 +562,22 @@ p {
   gap: 12px;
 }
 
+.room-date-group {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.room-date-heading {
+  margin: 8px 0 0;
+  padding: 0 2px 2px;
+  border-bottom: 1px solid var(--line);
+  color: #173b78;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
 .list-toolbar {
   display: flex;
   justify-content: space-between;
@@ -595,6 +611,18 @@ p {
   min-width: 0;
 }
 
+.room-time-cell {
+  order: 1;
+}
+
+.room-name-cell {
+  order: 2;
+}
+
+.room-crowd-cell {
+  order: 3;
+}
+
 .room-list-label {
   display: block;
   margin-bottom: 3px;
@@ -608,6 +636,37 @@ p {
   color: #173b78;
   font-size: 16px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.room-name-toggle {
+  display: inline-flex;
+  max-width: 100%;
+  border: 0;
+  padding: 0;
+  color: #173b78;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.room-name-toggle:hover {
+  color: var(--blue);
+}
+
+.room-location-description {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
@@ -681,7 +740,7 @@ p {
 
 .room-option-item {
   display: grid;
-  grid-template-columns: minmax(110px, 0.8fr) minmax(20em, 1.4fr) auto auto;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(26em, 1.6fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
@@ -700,14 +759,20 @@ p {
 }
 
 .room-option-location-cell {
-  display: flex;
+  display: grid;
+  grid-template-columns: 20em auto;
   gap: 8px;
   align-items: center;
   min-width: 0;
 }
 
 .room-option-location-cell span {
-  min-width: 0;
+  display: block;
+  width: 20em;
+  min-width: 20em;
+  max-width: 20em;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1052,6 +1117,37 @@ tr:last-child td {
 
   .room-item {
     grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .room-list-cell {
+    display: grid;
+    grid-template-columns: 5.5em minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .room-list-cell:last-child {
+    border-bottom: 0;
+  }
+
+  .room-list-label {
+    margin-bottom: 0;
+    line-height: 1.45;
+  }
+
+  .room-list-cell strong,
+  .room-name-toggle {
+    font-size: 15px;
+  }
+
+  .room-location-description {
+    grid-column: 2;
+    margin-top: 4px;
   }
 
   .room-option-item {
@@ -1059,8 +1155,13 @@ tr:last-child td {
   }
 
   .room-option-location-cell {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 20em) auto;
+  }
+
+  .room-option-location-cell span {
+    width: 100%;
+    min-width: 0;
+    max-width: 20em;
   }
 
   .request-summary .table-wrap {

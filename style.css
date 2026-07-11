@@ -675,6 +675,19 @@ p {
   box-shadow: 0 2px 8px rgba(22, 131, 58, 0.28);
 }
 
+.planned-room-toggle.is-disabled {
+  border-color: #cfd8d3;
+  background: #f1f4f2;
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.planned-room-toggle.is-selected.is-disabled {
+  border-color: #8fbea0;
+  background: #8fd8a3;
+}
+
 .planned-room-toggle:focus-visible {
   outline: 3px solid rgba(34, 164, 71, 0.25);
   outline-offset: 3px;

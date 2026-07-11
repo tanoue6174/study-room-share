@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ</title>
-  <link rel="stylesheet" href="style.css?v=20260711-planned-large-circle">
+  <link rel="stylesheet" href="style.css?v=20260711-planned-crowd">
 </head>
 <body>
   <header class="site-header">
@@ -769,13 +769,24 @@
       ].join("|");
     }
 
-    function setPlannedRoomState(item, button, isPlanned) {
+    function canChangePlannedRoom(room) {
+      const roomEndAt = roomEndDateTime(room);
+      return Boolean(roomEndAt && roomEndAt >= new Date());
+    }
+
+    function setPlannedRoomState(item, button, isPlanned, canChange = true) {
       item.classList.toggle("is-planned-room", isPlanned);
       button.classList.toggle("is-selected", isPlanned);
       button.textContent = "";
+      button.disabled = !canChange;
+      button.classList.toggle("is-disabled", !canChange);
       button.setAttribute("aria-pressed", String(isPlanned));
-      button.setAttribute("aria-label", isPlanned ? "自習室に行く予定を取り消す" : "自習室に行く予定にする");
-      button.title = isPlanned ? "自習室に行く予定" : "自習室に行く予定にする";
+      button.setAttribute("aria-label", canChange
+        ? isPlanned ? "自習室に行く予定を取り消す" : "自習室に行く予定にする"
+        : "終了時刻を過ぎたため変更できません");
+      button.title = canChange
+        ? isPlanned ? "自習室に行く予定" : "自習室に行く予定にする"
+        : "終了時刻を過ぎたため変更できません";
     }
 
     function makeAccountLoginId(password, name) {
@@ -881,7 +892,7 @@
         return "パスワードを入力してください。";
       }
       if (!roleFromPassword(password)) {
-        return "先生は teach2026、生徒は study2026 を入力してください。";
+        return "パスワードが違います。";
       }
       return "";
     }
@@ -1465,6 +1476,20 @@
               const roomKey = plannedRoomKey(room);
               const plannedRoomIds = getPlannedRoomIds();
               const isPlannedRoom = plannedRoomIds.has(roomKey);
+              const canChangePlan = canChangePlannedRoom(room);
+              let crowdValue;
+
+              const updateCrowdValue = () => {
+                if (!crowdValue) {
+                  return;
+                }
+
+                const plannedCount = getPlannedRoomIds().has(roomKey) ? 1 : 0;
+                const crowdRatio = Number(room.capacity) > 0
+                  ? Math.round((plannedCount / Number(room.capacity)) * 100) / 100
+                  : 0;
+                crowdValue.textContent = `${crowdRatio.toFixed(2)}（${plannedCount}/${room.capacity}人）`;
+              };
 
               const timeCell = document.createElement("div");
               timeCell.className = "room-list-cell room-time-cell";
@@ -1483,9 +1508,13 @@
                 const plannedButton = document.createElement("button");
                 plannedButton.className = "planned-room-toggle";
                 plannedButton.type = "button";
-                setPlannedRoomState(item, plannedButton, isPlannedRoom);
+                setPlannedRoomState(item, plannedButton, isPlannedRoom, canChangePlan);
 
                 plannedButton.addEventListener("click", () => {
+                  if (!canChangePlan) {
+                    return;
+                  }
+
                   const ids = getPlannedRoomIds();
                   const nextState = !ids.has(roomKey);
 
@@ -1496,7 +1525,8 @@
                   }
 
                   savePlannedRoomIds(ids);
-                  setPlannedRoomState(item, plannedButton, nextState);
+                  setPlannedRoomState(item, plannedButton, nextState, canChangePlan);
+                  updateCrowdValue();
                 });
 
                 valueWrap.append(timeValue, plannedButton);
@@ -1540,8 +1570,8 @@
               crowdLabel.className = "room-list-label";
               crowdLabel.textContent = "\u6df7\u307f\u5177\u5408";
 
-              const crowdValue = document.createElement("strong");
-              crowdValue.textContent = `0.00\uff080/${room.capacity}\u4eba\uff09`;
+              crowdValue = document.createElement("strong");
+              updateCrowdValue();
 
               crowdCell.append(crowdLabel, crowdValue);
               item.appendChild(crowdCell);

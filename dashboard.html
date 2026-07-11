@@ -2296,7 +2296,12 @@
       }
 
       if (error) {
-        setFriendMessage("コメントを変更できませんでした。Supabaseの設定を確認してください。", "error");
+        const message = String(error?.message || "");
+        if (message.includes("self_comment") || message.includes("schema cache")) {
+          setFriendMessage("コメント用のSupabase設定がまだです。supabase-fix-profile-comments.sqlを実行してください。", "error");
+        } else {
+          setFriendMessage("コメントを変更できませんでした。Supabaseの設定を確認してください。", "error");
+        }
         return;
       }
 

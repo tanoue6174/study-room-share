@@ -428,3 +428,5 @@ begin
     grant usage, select on sequence public.study_room_plans_id_seq to authenticated;
   end if;
 end $$;
+
+notify pgrst, 'reload schema';

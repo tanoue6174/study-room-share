@@ -273,6 +273,14 @@
           <p>生徒アカウントを名前で検索できます。</p>
         </div>
 
+        <div class="self-comment-card" id="self-comment-card">
+          <div>
+            <h4>自分のコメント</h4>
+            <p id="self-comment-text">コメント</p>
+          </div>
+          <button class="button secondary self-comment-edit" id="self-comment-edit" type="button">編集</button>
+        </div>
+
         <form class="friend-search-form" id="friend-search-form">
           <label for="friend-search">名前で検索</label>
           <div class="friend-search-row">
@@ -436,6 +444,11 @@
           },
           neq(column, value) {
             state.filters.push(`${encodeURIComponent(column)}=neq.${encodeURIComponent(value)}`);
+            return builder;
+          },
+          in(column, values) {
+            const list = (values || []).map((value) => encodeURIComponent(value)).join(",");
+            state.filters.push(`${encodeURIComponent(column)}=in.(${list})`);
             return builder;
           },
           ilike(column, value) {
@@ -1432,7 +1445,7 @@
         return "入力内容を確認してください。";
       }
 
-      return "入力内容を確認してください。";
+      return "";
     }
 
     function getRequestTimeProblem(dateValue, timeValue) {
@@ -1452,7 +1465,7 @@
         return "入力内容を確認してください。";
       }
 
-      return "入力内容を確認してください。";
+      return "";
     }
 
     function buildDateOptions(selectElement, placeholderText) {
@@ -2105,17 +2118,9 @@
               updateCrowdValue();
 
               crowdCell.append(crowdLabel, crowdValue);
-              item.appendChild(crowdCell);
 
               const friendPlans = getFriendPlansForRoom(room);
               if (friendPlans.length) {
-                const friendsCell = document.createElement("div");
-                friendsCell.className = "room-list-cell room-friends-cell";
-
-                const friendsLabel = document.createElement("span");
-                friendsLabel.className = "room-list-label";
-                friendsLabel.textContent = "友達";
-
                 const friendsWrap = document.createElement("div");
                 friendsWrap.className = "room-friends-wrap";
 
@@ -2137,10 +2142,10 @@
                 });
 
                 friendsWrap.append(friendsButton, friendsDetail);
-                friendsCell.append(friendsLabel, friendsWrap);
-                item.appendChild(friendsCell);
+                crowdCell.appendChild(friendsWrap);
               }
 
+              item.appendChild(crowdCell);
               group.appendChild(item);
             });
 

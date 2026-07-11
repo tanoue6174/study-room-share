@@ -203,6 +203,7 @@
           <select id="request-room" name="request-room" required>
             <option value="">登録されている部屋はありません</option>
           </select>
+          <p class="field-help" id="request-room-description" hidden></p>
 
           <label for="request-date">希望日</label>
           <select id="request-date" name="request-date" required></select>
@@ -307,11 +308,58 @@
         };
       }
 
+      async function refreshStoredSession() {
+        const session = getStoredSession();
+        if (!session?.refresh_token) {
+          return null;
+        }
+
+        const response = await fetch(`${authUrl}/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: {
+            apikey: key,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ refresh_token: session.refresh_token })
+        });
+        const text = await response.text();
+        const payload = text ? JSON.parse(text) : null;
+
+        if (!response.ok) {
+          saveSession(null);
+          return null;
+        }
+
+        const refreshedSession = buildSession(payload);
+        if (refreshedSession) {
+          saveSession(refreshedSession);
+        }
+        return refreshedSession;
+      }
+
       async function request(endpoint, options) {
         try {
-          const response = await fetch(endpoint, options);
-          const text = await response.text();
-          const payload = text ? JSON.parse(text) : null;
+          let response = await fetch(endpoint, options);
+          let text = await response.text();
+          let payload = text ? JSON.parse(text) : null;
+
+          if (
+            response.status === 401 &&
+            String(payload?.msg || payload?.message || payload?.error_description || payload?.error || "").toLowerCase().includes("jwt")
+          ) {
+            const refreshedSession = await refreshStoredSession();
+            if (refreshedSession) {
+              response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                  ...options.headers,
+                  Authorization: `Bearer ${refreshedSession.access_token}`
+                }
+              });
+              text = await response.text();
+              payload = text ? JSON.parse(text) : null;
+            }
+          }
 
           if (!response.ok) {
             return {
@@ -547,6 +595,7 @@
     const roomOptionList = document.getElementById("room-option-list");
     const requestForm = document.getElementById("request-form");
     const requestRoom = document.getElementById("request-room");
+    const requestRoomDescription = document.getElementById("request-room-description");
     const requestDate = document.getElementById("request-date");
     const requestTime = document.getElementById("request-time");
     const requestTitle = document.getElementById("request-title");
@@ -953,18 +1002,28 @@
         requestRoom.appendChild(option);
         requestRoom.disabled = true;
         requestSubmit.disabled = true;
+        syncSelectedRequestRoomDescription();
         return;
       }
 
       requestableRooms.forEach((room) => {
         const option = document.createElement("option");
         option.value = room.id;
-        option.textContent = room.location ? `${room.room_name} (${room.location})` : room.room_name;
+        option.textContent = room.room_name;
+        option.dataset.location = room.location || "";
         requestRoom.appendChild(option);
       });
 
       requestRoom.disabled = false;
       requestSubmit.disabled = !currentUser;
+      syncSelectedRequestRoomDescription();
+    }
+
+    function syncSelectedRequestRoomDescription() {
+      const selectedOption = requestRoom.options?.[requestRoom.selectedIndex];
+      const location = selectedOption?.dataset.location || "";
+      requestRoomDescription.textContent = location;
+      requestRoomDescription.hidden = !location;
     }
 
     function syncSelectedRoomLocation() {
@@ -2154,6 +2213,7 @@
     roomOptionList.addEventListener("click", handleRoomOptionLocationEdit);
     roomOptionList.addEventListener("change", handleRoomOptionSettingChange);
     roomName.addEventListener("change", syncSelectedRoomLocation);
+    requestRoom.addEventListener("change", syncSelectedRequestRoomDescription);
     requestForm.addEventListener("submit", handleRequestSubmit);
     if (friendSearchForm) {
       friendSearchForm.addEventListener("submit", handleFriendSearch);

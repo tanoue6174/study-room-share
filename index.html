@@ -551,18 +551,18 @@
       setText('.request-summary th:nth-child(1)', '時間');
       setText('.request-summary th:nth-child(2)', '部屋');
       setText('.request-summary th:nth-child(3)', '希望人数');
-      setText('#friends-title', 'フレンド');
+      setText('#friends-title', '友達');
       setText('#friends-panel .request-heading p:last-child', '生徒アカウントを名前で検索できます。');
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
-      setText('.friend-list-wrap h4', 'フレンド');
+      setText('.friend-list-wrap h4', '友達');
       setPlaceholder('#display-name', '学校内で使う名前');
       setPlaceholder('#account-password', 'パスワード');
       setPlaceholder('#room-location', '場所説明');
       setPlaceholder('#room-note', '例: 静かに自習したい人向け');
       setPlaceholder('#room-option-name', '例: CAD室');
       setPlaceholder('#room-option-location', '例: 3階東側');
-      setPlaceholder('#friend-search', 'フレンドの名前');
+      setPlaceholder('#friend-search', '友達の名前');
       const purposeSection = document.querySelector('main > section.section:not(.app-section)');
       if (purposeSection) {
         purposeSection.innerHTML = `
@@ -584,7 +584,7 @@
       setText('#room-list .empty-rooms', 'ログインすると自習室リストを確認できます。');
       setText('#room-option-list .empty-rooms', 'まだ部屋が設定されていません。');
       setText('#friend-results .empty-rooms', '名前を入力して検索してください。');
-      setText('#friend-list .empty-rooms', 'まだフレンドはいません。');
+      setText('#friend-list .empty-rooms', 'まだ友達はいません。');
       setText('.footer p', 'Study Room Share | 自習場所共有アプリ');
     }
     localizeStaticText();

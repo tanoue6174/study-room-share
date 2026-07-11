@@ -950,6 +950,69 @@
       });
     }
 
+    function visibleRoomCutoff() {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 1);
+      cutoff.setHours(6, 0, 0, 0);
+      return cutoff;
+    }
+
+    function roomEndDateTime(room) {
+      if (!room?.available_date || !room?.end_time) {
+        return null;
+      }
+
+      return new Date(`${room.available_date}T${String(room.end_time).slice(0, 5)}:00`);
+    }
+
+    function filterVisibleRooms(rooms) {
+      const cutoff = visibleRoomCutoff();
+
+      return (rooms || []).filter((room) => {
+        const roomEndAt = roomEndDateTime(room);
+        return roomEndAt && roomEndAt >= cutoff;
+      });
+    }
+
+    async function cleanupExpiredRooms() {
+      if (!currentUser) {
+        return;
+      }
+
+      const cutoff = visibleRoomCutoff();
+
+      if (String(currentUser.id).startsWith("local-")) {
+        saveLocalRooms(getLocalRooms().filter((room) => {
+          const roomEndAt = roomEndDateTime(room);
+          return roomEndAt && roomEndAt >= cutoff;
+        }));
+        return;
+      }
+
+      if (displayRoleForAccount(currentProfile, currentUser) !== "teacher") {
+        return;
+      }
+
+      const { data, error } = await appClient
+        .from("study_rooms")
+        .select("id, available_date, end_time, created_by")
+        .eq("created_by", currentUser.id);
+
+      if (error) {
+        return;
+      }
+
+      const expiredRooms = (data || []).filter((room) => {
+        const roomEndAt = roomEndDateTime(room);
+        return roomEndAt && roomEndAt < cutoff;
+      });
+
+      await Promise.all(expiredRooms.map((room) => appClient
+        .from("study_rooms")
+        .delete()
+        .eq("id", room.id)
+        .eq("created_by", currentUser.id)));
+    }
     function maxAllowedDateTime() {
       const max = new Date();
       max.setMonth(max.getMonth() + 3);
@@ -1716,9 +1779,12 @@
       }
 
       if (String(currentUser.id).startsWith("local-")) {
-        renderRooms(getLocalRooms());
+        await cleanupExpiredRooms();
+        renderRooms(filterVisibleRooms(getLocalRooms()));
         return;
       }
+
+      await cleanupExpiredRooms();
 
       const { data, error } = await appClient
         .from("study_rooms")
@@ -1732,7 +1798,7 @@
         return;
       }
 
-      renderRooms(data || []);
+      renderRooms(filterVisibleRooms(data || []));
     }
 
     function renderRequestSummary(requests) {

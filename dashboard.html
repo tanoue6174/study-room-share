@@ -479,8 +479,12 @@
           },
           async upsert(values, options = {}) {
             const onConflict = options.onConflict || "id";
+            const conflictTarget = String(onConflict)
+              .split(",")
+              .map((column) => encodeURIComponent(column.trim()))
+              .join(",");
             const resolution = options.ignoreDuplicates ? "ignore-duplicates" : "merge-duplicates";
-            return request(`${restUrl}/${name}?on_conflict=${encodeURIComponent(onConflict)}`, {
+            return request(`${restUrl}/${name}?on_conflict=${conflictTarget}`, {
               method: "POST",
               headers: {
                 ...authHeaders(true),
@@ -655,6 +659,7 @@
     let currentUser = null;
     let currentProfile = null;
     let currentRequests = [];
+    let currentRoomPlans = [];
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
@@ -1003,6 +1008,114 @@
     function canChangePlannedRoom(room) {
       const roomEndAt = roomEndDateTime(room);
       return Boolean(roomEndAt && roomEndAt >= new Date());
+    }
+
+    function getRoomId(room) {
+      return room?.id == null ? "" : String(room.id);
+    }
+
+    function isSupabaseUser() {
+      return currentUser && !String(currentUser.id || "").startsWith("local-");
+    }
+
+    function getLocalPlannedRoomCount(room) {
+      return getPlannedRoomIds().has(plannedRoomKey(room)) ? 1 : 0;
+    }
+
+    function isRoomPlannedByCurrentUser(room) {
+      if (!isSupabaseUser()) {
+        return Boolean(currentUser) && getLocalPlannedRoomCount(room) > 0;
+      }
+
+      const roomId = getRoomId(room);
+      return currentRoomPlans.some((plan) => (
+        String(plan.room_id) === roomId && String(plan.user_id) === String(currentUser.id)
+      ));
+    }
+
+    function getRoomPlanCount(room) {
+      if (!isSupabaseUser()) {
+        return getLocalPlannedRoomCount(room);
+      }
+
+      const roomId = getRoomId(room);
+      return currentRoomPlans.filter((plan) => String(plan.room_id) === roomId).length;
+    }
+
+    async function loadRoomPlans(rooms) {
+      currentRoomPlans = [];
+
+      if (!isSupabaseUser()) {
+        return;
+      }
+
+      const roomIds = new Set((rooms || []).map(getRoomId).filter(Boolean));
+      if (!roomIds.size) {
+        return;
+      }
+
+      const { data, error } = await appClient
+        .from("study_room_plans")
+        .select("room_id, user_id, created_at");
+
+      if (error) {
+        currentRoomPlans = [];
+        return;
+      }
+
+      currentRoomPlans = (data || []).filter((plan) => roomIds.has(String(plan.room_id)));
+    }
+
+    async function saveRoomPlan(room, shouldPlan) {
+      if (!isSupabaseUser()) {
+        const ids = getPlannedRoomIds();
+        const roomKey = plannedRoomKey(room);
+        if (shouldPlan) {
+          ids.add(roomKey);
+        } else {
+          ids.delete(roomKey);
+        }
+        savePlannedRoomIds(ids);
+        return { error: null };
+      }
+
+      const roomId = getRoomId(room);
+      if (!roomId) {
+        return { error: { message: "部屋情報が見つかりません。" } };
+      }
+
+      if (shouldPlan) {
+        const { error } = await appClient.from("study_room_plans").upsert({
+          room_id: Number(roomId),
+          user_id: currentUser.id
+        }, {
+          onConflict: "room_id,user_id",
+          ignoreDuplicates: true
+        });
+
+        if (!error && !isRoomPlannedByCurrentUser(room)) {
+          currentRoomPlans.push({
+            room_id: Number(roomId),
+            user_id: currentUser.id,
+            created_at: new Date().toISOString()
+          });
+        }
+        return { error };
+      }
+
+      const { error } = await appClient
+        .from("study_room_plans")
+        .delete()
+        .eq("room_id", roomId)
+        .eq("user_id", currentUser.id);
+
+      if (!error) {
+        currentRoomPlans = currentRoomPlans.filter((plan) => !(
+          String(plan.room_id) === roomId && String(plan.user_id) === String(currentUser.id)
+        ));
+      }
+
+      return { error };
     }
 
     function setPlannedRoomState(item, button, isPlanned, canChange = true) {
@@ -1678,6 +1791,7 @@
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
+      currentRoomPlans = [];
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
       schoolBanner.hidden = true;
@@ -1809,9 +1923,7 @@
               const item = document.createElement("article");
               item.className = "room-item";
               const role = displayRoleForAccount(currentProfile, currentUser);
-              const roomKey = plannedRoomKey(room);
-              const plannedRoomIds = getPlannedRoomIds();
-              const isPlannedRoom = plannedRoomIds.has(roomKey);
+              const isPlannedRoom = isRoomPlannedByCurrentUser(room);
               const canChangePlan = canChangePlannedRoom(room);
               let crowdValue;
 
@@ -1829,7 +1941,7 @@
                   return;
                 }
 
-                const plannedCount = getPlannedRoomIds().has(roomKey) ? 1 : 0;
+                const plannedCount = getRoomPlanCount(room);
                 const totalGoingCount = matchingRequests.length + plannedCount;
                 const crowdRatio = Number(room.capacity) > 0
                   ? Math.round((totalGoingCount / Number(room.capacity)) * 100) / 100
@@ -1864,26 +1976,26 @@
                   plannedButton.type = "button";
                   setPlannedRoomState(item, plannedButton, isPlannedRoom, canChangePlan);
 
-                  plannedButton.addEventListener("click", () => {
+                  plannedButton.addEventListener("click", async () => {
                     if (!canChangePlan) {
                       return;
                     }
 
-                    const ids = getPlannedRoomIds();
-                    const nextState = !ids.has(roomKey);
+                    const nextState = !isRoomPlannedByCurrentUser(room);
 
                     if (!nextState && !window.confirm("自習室に行く予定を取りやめますか？")) {
                       return;
                     }
 
-                    if (nextState) {
-                      ids.add(roomKey);
-                    } else {
-                      ids.delete(roomKey);
+                    plannedButton.disabled = true;
+                    const { error } = await saveRoomPlan(room, nextState);
+                    if (error) {
+                      window.alert("混み具合を更新できませんでした。Supabaseのテーブル設定を確認してください。");
+                      setPlannedRoomState(item, plannedButton, isRoomPlannedByCurrentUser(room), canChangePlan);
+                      return;
                     }
 
-                    savePlannedRoomIds(ids);
-                    setPlannedRoomState(item, plannedButton, nextState, canChangePlan);
+                    setPlannedRoomState(item, plannedButton, isRoomPlannedByCurrentUser(room), canChangePlan);
                     updateCrowdValue();
                   });
 
@@ -2133,7 +2245,7 @@
 
       if (error) {
         renderFriendList([]);
-        setFriendMessage("", "");
+        setFriendMessage("友達リストを読み込めませんでした。Supabaseの設定を確認してください。", "error");
         return [];
       }
 
@@ -2263,7 +2375,18 @@
       }
 
       button.textContent = "追加済み";
-      await loadFriends();
+      const loadedFriends = await loadFriends();
+      const alreadyVisible = loadedFriends.some((friend) => String(friend.friend_id || friend.id) === String(friendId));
+      if (!alreadyVisible) {
+        renderFriendList([
+          ...loadedFriends,
+          {
+            id: friendId,
+            display_name: friendName,
+            created_at: new Date().toISOString()
+          }
+        ]);
+      }
       setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
     }
 
@@ -2398,6 +2521,7 @@
 
       if (String(currentUser.id).startsWith("local-")) {
         await cleanupExpiredRooms();
+        currentRoomPlans = [];
         renderRooms(filterVisibleRooms(getLocalRooms()));
         return;
       }
@@ -2416,7 +2540,9 @@
         return;
       }
 
-      renderRooms(filterVisibleRooms(data || []));
+      const visibleRooms = filterVisibleRooms(data || []);
+      await loadRoomPlans(visibleRooms);
+      renderRooms(visibleRooms);
     }
 
     function renderRequestSummary(requests) {

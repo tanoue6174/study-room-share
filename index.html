@@ -315,8 +315,12 @@
           },
           async upsert(values, options = {}) {
             const onConflict = options.onConflict || "id";
+            const conflictTarget = String(onConflict)
+              .split(",")
+              .map((column) => encodeURIComponent(column.trim()))
+              .join(",");
             const resolution = options.ignoreDuplicates ? "ignore-duplicates" : "merge-duplicates";
-            return request(`${restUrl}/${name}?on_conflict=${encodeURIComponent(onConflict)}`, {
+            return request(`${restUrl}/${name}?on_conflict=${conflictTarget}`, {
               method: "POST",
               headers: {
                 ...authHeaders(true),

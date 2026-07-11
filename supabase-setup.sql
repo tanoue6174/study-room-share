@@ -58,6 +58,17 @@ create table if not exists public.student_friends (
 create unique index if not exists student_friends_user_friend_idx
 on public.student_friends (user_id, friend_id);
 
+create table if not exists public.study_room_plans (
+  id bigint generated always as identity primary key,
+  room_id bigint not null references public.study_rooms(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (room_id, user_id)
+);
+
+create unique index if not exists study_room_plans_room_user_idx
+on public.study_room_plans (room_id, user_id);
+
 create table if not exists public.study_sessions (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -115,6 +126,7 @@ alter table public.study_rooms enable row level security;
 alter table public.study_room_options enable row level security;
 alter table public.study_requests enable row level security;
 alter table public.student_friends enable row level security;
+alter table public.study_room_plans enable row level security;
 alter table public.study_sessions enable row level security;
 
 drop policy if exists "Users can read profiles" on public.profiles;
@@ -135,6 +147,9 @@ drop policy if exists "Students can search student profiles" on public.profiles;
 drop policy if exists "Students can read own friends" on public.student_friends;
 drop policy if exists "Students can create own friends" on public.student_friends;
 drop policy if exists "Students can delete own friends" on public.student_friends;
+drop policy if exists "Logged in users can read room plans" on public.study_room_plans;
+drop policy if exists "Students can create own room plans" on public.study_room_plans;
+drop policy if exists "Students can delete own room plans" on public.study_room_plans;
 drop policy if exists "Students can read own study sessions" on public.study_sessions;
 drop policy if exists "Students can create own study sessions" on public.study_sessions;
 drop policy if exists "Students can update own study sessions" on public.study_sessions;
@@ -331,6 +346,32 @@ for delete
 to authenticated
 using (user_id = auth.uid());
 
+create policy "Logged in users can read room plans"
+on public.study_room_plans
+for select
+to authenticated
+using (true);
+
+create policy "Students can create own room plans"
+on public.study_room_plans
+for insert
+to authenticated
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'student'
+  )
+);
+
+create policy "Students can delete own room plans"
+on public.study_room_plans
+for delete
+to authenticated
+using (user_id = auth.uid());
+
 create policy "Students can read own study sessions"
 on public.study_sessions
 for select
@@ -360,10 +401,14 @@ with check (user_id = auth.uid());
 
 grant select on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
+grant select, insert, delete on public.study_room_plans to authenticated;
 
 do $$
 begin
   if to_regclass('public.student_friends_id_seq') is not null then
     grant usage, select on sequence public.student_friends_id_seq to authenticated;
+  end if;
+  if to_regclass('public.study_room_plans_id_seq') is not null then
+    grant usage, select on sequence public.study_room_plans_id_seq to authenticated;
   end if;
 end $$;

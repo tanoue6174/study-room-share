@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自習サポートアプリ</title>
-  <link rel="stylesheet" href="style.css?v=20260711-planned-circle-text">
+  <link rel="stylesheet" href="style.css?v=20260711-planned-large-circle">
 </head>
 <body class="dashboard-page">
   <header class="site-header" hidden>
@@ -943,7 +943,7 @@
     function setPlannedRoomState(item, button, isPlanned) {
       item.classList.toggle("is-planned-room", isPlanned);
       button.classList.toggle("is-selected", isPlanned);
-      button.textContent = isPlanned ? "●" : "○";
+      button.textContent = "";
       button.setAttribute("aria-pressed", String(isPlanned));
       button.setAttribute("aria-label", isPlanned ? "自習室に行く予定を取り消す" : "自習室に行く予定にする");
       button.title = isPlanned ? "自習室に行く予定" : "自習室に行く予定にする";

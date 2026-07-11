@@ -681,7 +681,7 @@ p {
 
 .room-option-item {
   display: grid;
-  grid-template-columns: 1.2fr 1fr auto auto;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(20em, 1.4fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
@@ -708,7 +708,7 @@ p {
 
 .room-option-location-cell span {
   min-width: 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .room-option-location-edit {

@@ -171,7 +171,7 @@
           </div>
           <div>
             <label for="room-option-location">場所</label>
-            <input id="room-option-location" name="room-option-location" type="text" maxlength="80" placeholder="例: 3階 東側">
+            <input id="room-option-location" name="room-option-location" type="text" maxlength="20" placeholder="例: 3階 東側">
           </div>
           <div>
             <label for="room-option-accepts-requests">要望受付</label>
@@ -2059,12 +2059,16 @@
       const optionId = editButton.dataset.roomOptionId;
       const optionName = editButton.dataset.roomOptionName || "この部屋";
       const currentLocation = editButton.dataset.roomOptionLocation || "";
-      const nextLocation = window.prompt(`${optionName} の場所説明を入力してください。空欄でも登録できます。`, currentLocation);
+      const nextLocation = window.prompt(`${optionName} の場所説明を20字以内で入力してください。空欄でも登録できます。`, currentLocation);
       if (nextLocation === null) {
         return;
       }
 
       const location = nextLocation.trim();
+      if (location.length > 20) {
+        setRoomOptionMessage("場所説明は20字以内で入力してください。", "error");
+        return;
+      }
       setRoomOptionMessage("", "");
 
       if (String(currentUser.id).startsWith("local-")) {

@@ -120,7 +120,7 @@
         <section id="room-settings-panel" hidden>
           <form id="room-option-form">
             <input id="room-option-name" type="text">
-            <input id="room-option-location" type="text">
+            <input id="room-option-location" type="text" maxlength="20">
             <select id="room-option-accepts-requests">
               <option value="true"></option>
               <option value="false"></option>
@@ -1589,12 +1589,16 @@
       const optionId = editButton.dataset.roomOptionId;
       const optionName = editButton.dataset.roomOptionName || "この部屋";
       const currentLocation = editButton.dataset.roomOptionLocation || "";
-      const nextLocation = window.prompt(`${optionName} の場所説明を入力してください。空欄でも登録できます。`, currentLocation);
+      const nextLocation = window.prompt(`${optionName} の場所説明を20字以内で入力してください。空欄でも登録できます。`, currentLocation);
       if (nextLocation === null) {
         return;
       }
 
       const location = nextLocation.trim();
+      if (location.length > 20) {
+        setRoomOptionMessage("場所説明は20字以内で入力してください。", "error");
+        return;
+      }
       setRoomOptionMessage("", "");
 
       if (String(currentUser.id).startsWith("local-")) {

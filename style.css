@@ -502,6 +502,7 @@ p {
 }
 
 .room-form input,
+.room-form select,
 .room-form textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -513,9 +514,14 @@ p {
 }
 
 .room-form input:focus,
+.room-form select:focus,
 .room-form textarea:focus {
   outline: 3px solid rgba(47, 111, 237, 0.18);
   border-color: var(--blue);
+}
+
+.room-form input[readonly] {
+  background: #f5f8fb;
 }
 
 .form-grid {
@@ -612,6 +618,73 @@ p {
   border-radius: 8px;
   background: var(--panel);
   box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
+}
+
+.room-settings-panel {
+  margin-top: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
+}
+
+.room-option-form {
+  display: grid;
+  gap: 10px;
+}
+
+.room-option-form label {
+  color: #173b78;
+  font-weight: 800;
+}
+
+.room-option-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+}
+
+.room-option-form input:focus {
+  outline: 3px solid rgba(47, 111, 237, 0.18);
+  border-color: var(--blue);
+}
+
+.room-option-submit {
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.room-option-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.room-option-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.room-option-item strong {
+  color: #173b78;
+}
+
+.room-option-item span {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .request-heading {

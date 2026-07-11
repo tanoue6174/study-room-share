@@ -23,8 +23,18 @@ create table if not exists public.study_rooms (
   check (start_time < end_time)
 );
 
+create table if not exists public.study_room_options (
+  id bigint generated always as identity primary key,
+  room_name text not null,
+  location text not null,
+  created_by uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (created_by, room_name)
+);
+
 alter table public.profiles enable row level security;
 alter table public.study_rooms enable row level security;
+alter table public.study_room_options enable row level security;
 
 drop policy if exists "Users can read profiles" on public.profiles;
 drop policy if exists "Users can create own profile" on public.profiles;
@@ -34,6 +44,10 @@ drop policy if exists "Logged in users can read study rooms" on public.study_roo
 drop policy if exists "Teachers can create study rooms" on public.study_rooms;
 drop policy if exists "Teachers can update own study rooms" on public.study_rooms;
 drop policy if exists "Teachers can delete own study rooms" on public.study_rooms;
+drop policy if exists "Logged in users can read room options" on public.study_room_options;
+drop policy if exists "Teachers can create room options" on public.study_room_options;
+drop policy if exists "Teachers can update own room options" on public.study_room_options;
+drop policy if exists "Teachers can delete own room options" on public.study_room_options;
 
 create policy "Users can read profiles"
 on public.profiles
@@ -47,7 +61,7 @@ for insert
 to authenticated
 with check (
   id = auth.uid()
-  and role = 'student'
+  and role in ('teacher', 'student')
 );
 
 create policy "Users can update own profile"
@@ -57,7 +71,7 @@ to authenticated
 using (id = auth.uid())
 with check (
   id = auth.uid()
-  and role = 'student'
+  and role in ('teacher', 'student')
 );
 
 create policy "Logged in users can read study rooms"
@@ -105,6 +119,63 @@ with check (
 
 create policy "Teachers can delete own study rooms"
 on public.study_rooms
+for delete
+to authenticated
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'teacher'
+  )
+);
+
+create policy "Logged in users can read room options"
+on public.study_room_options
+for select
+to authenticated
+using (true);
+
+create policy "Teachers can create room options"
+on public.study_room_options
+for insert
+to authenticated
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'teacher'
+  )
+);
+
+create policy "Teachers can update own room options"
+on public.study_room_options
+for update
+to authenticated
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'teacher'
+  )
+)
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where profiles.id = auth.uid()
+      and profiles.role = 'teacher'
+  )
+);
+
+create policy "Teachers can delete own room options"
+on public.study_room_options
 for delete
 to authenticated
 using (

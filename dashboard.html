@@ -108,10 +108,12 @@
           <h3>自習室を登録</h3>
 
           <label for="room-name">部屋名</label>
-          <input id="room-name" name="room-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
+          <select id="room-name" name="room-name" required>
+            <option value="">下の部屋設定で部屋を追加してください</option>
+          </select>
 
           <label for="room-location">場所</label>
-          <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
+          <input id="room-location" name="room-location" type="text" maxlength="80" placeholder="部屋を選ぶと自動で入ります" readonly required>
 
           <div class="form-grid">
             <div>
@@ -152,6 +154,33 @@
           </div>
         </div>
       </div>
+
+      <section class="room-settings-panel" id="room-settings-panel" hidden>
+        <div class="request-heading">
+          <div>
+            <p class="eyebrow">Rooms</p>
+            <h3>部屋設定</h3>
+          </div>
+          <p>自習室登録で使う部屋を先に追加できます。</p>
+        </div>
+
+        <form class="room-option-form" id="room-option-form">
+          <div>
+            <label for="room-option-name">部屋名</label>
+            <input id="room-option-name" name="room-option-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
+          </div>
+          <div>
+            <label for="room-option-location">場所</label>
+            <input id="room-option-location" name="room-option-location" type="text" maxlength="80" placeholder="例: 3階 東側" required>
+          </div>
+          <button class="button primary room-option-submit" id="room-option-submit" type="submit">部屋を追加</button>
+          <p class="room-message" id="room-option-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="room-option-list" id="room-option-list" aria-live="polite">
+          <p class="empty-rooms">まだ部屋が設定されていません。</p>
+        </div>
+      </section>
 
       <section class="request-panel" aria-labelledby="request-title">
         <div class="request-heading">
@@ -397,6 +426,7 @@
     const dashboardNote = document.getElementById("dashboard-note");
     const roomLayout = document.querySelector(".room-layout");
     const requestPanel = document.querySelector(".request-panel");
+    const roomSettingsPanel = document.getElementById("room-settings-panel");
     const roomForm = document.getElementById("room-form");
     const roomName = document.getElementById("room-name");
     const roomLocation = document.getElementById("room-location");
@@ -409,10 +439,16 @@
     const roomMessage = document.getElementById("room-message");
     const roomList = document.getElementById("room-list");
     const refreshRooms = document.getElementById("refresh-rooms");
+    const roomOptionForm = document.getElementById("room-option-form");
+    const roomOptionName = document.getElementById("room-option-name");
+    const roomOptionLocation = document.getElementById("room-option-location");
+    const roomOptionMessage = document.getElementById("room-option-message");
+    const roomOptionList = document.getElementById("room-option-list");
     const requestForm = document.getElementById("request-form");
     const requestRoom = document.getElementById("request-room");
     const requestDate = document.getElementById("request-date");
     const requestTime = document.getElementById("request-time");
+    const requestTitle = document.getElementById("request-title");
     const requestSubmit = document.getElementById("request-submit");
     const requestMessage = document.getElementById("request-message");
 
@@ -421,6 +457,7 @@
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
+    const LOCAL_ROOM_OPTIONS_KEY = "study-room-share-local-room-options";
     const ROLE_PASSWORDS = {
       student: ["stu", "dy", "2026"].join(""),
       teacher: ["tea", "ch", "2026"].join("")
@@ -436,6 +473,11 @@
     function setRoomMessage(text, type) {
       roomMessage.textContent = text;
       roomMessage.dataset.type = type || "";
+    }
+
+    function setRoomOptionMessage(text, type) {
+      roomOptionMessage.textContent = text;
+      roomOptionMessage.dataset.type = type || "";
     }
 
     function setRequestMessage(text, type) {
@@ -525,6 +567,14 @@
       writeLocalJson(LOCAL_ROOMS_KEY, rooms);
     }
 
+    function getLocalRoomOptions() {
+      return readLocalJson(LOCAL_ROOM_OPTIONS_KEY, []);
+    }
+
+    function saveLocalRoomOptions(options) {
+      writeLocalJson(LOCAL_ROOM_OPTIONS_KEY, options);
+    }
+
     function getPasswordAccount(id, name) {
       const role = roleFromPassword(id);
       return {
@@ -573,14 +623,6 @@
       const message = String(error?.message || "").toLowerCase();
       const status = error?.status;
 
-      if (status === 422) {
-        return "入力内容に問題があります。パスワードを確認してください。";
-      }
-
-      if (status === 400) {
-        return "入力内容が正しくありません。パスワードを確認してください。";
-      }
-
       if (message.includes("already registered") || message.includes("already exists") || message.includes("user already")) {
         return "このパスワードのアカウントはすでにあります。ログインしてください。";
       }
@@ -603,6 +645,14 @@
 
       if (message.includes("network") || message.includes("failed to fetch")) {
         return "Supabaseへの接続に失敗しました。時間をおいて再試行するか、SupabaseのURLと公開キー、メール確認設定を確認してください。";
+      }
+
+      if (status === 422) {
+        return "入力内容に問題があります。パスワードを確認してください。";
+      }
+
+      if (status === 400) {
+        return "入力内容が正しくありません。パスワードを確認してください。";
       }
 
       return "原因を特定できませんでした。パスワードとSupabaseの設定を確認してください。";
@@ -713,6 +763,86 @@
       requestSubmit.disabled = !currentUser;
     }
 
+    function syncSelectedRoomLocation() {
+      const selectedOption = roomName.options?.[roomName.selectedIndex];
+      roomLocation.value = selectedOption?.dataset.location || "";
+    }
+
+    function renderRoomOptionChoices(options) {
+      roomName.innerHTML = "";
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = options.length ? "部屋を選んでください" : "下の部屋設定で部屋を追加してください";
+      roomName.appendChild(placeholder);
+
+      options.forEach((optionItem) => {
+        const option = document.createElement("option");
+        option.value = optionItem.room_name;
+        option.textContent = optionItem.room_name;
+        option.dataset.location = optionItem.location || "";
+        option.dataset.id = optionItem.id;
+        roomName.appendChild(option);
+      });
+
+      roomName.disabled = !options.length;
+      syncSelectedRoomLocation();
+    }
+
+    function renderRoomOptionList(options) {
+      roomOptionList.innerHTML = "";
+
+      if (!options.length) {
+        roomOptionList.innerHTML = '<p class="empty-rooms">まだ部屋が設定されていません。</p>';
+        return;
+      }
+
+      options.forEach((optionItem) => {
+        const item = document.createElement("article");
+        item.className = "room-option-item";
+
+        const name = document.createElement("strong");
+        name.textContent = optionItem.room_name;
+
+        const location = document.createElement("span");
+        location.textContent = optionItem.location;
+
+        item.append(name, location);
+        roomOptionList.appendChild(item);
+      });
+    }
+
+    function renderRoomOptions(options) {
+      renderRoomOptionChoices(options);
+      renderRoomOptionList(options);
+    }
+
+    async function loadRoomOptions() {
+      if (!currentUser) {
+        renderRoomOptions([]);
+        return;
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        renderRoomOptions(getLocalRoomOptions());
+        return;
+      }
+
+      const { data, error } = await appClient
+        .from("study_room_options")
+        .select("id, room_name, location, created_at")
+        .eq("created_by", currentUser.id)
+        .order("room_name", { ascending: true });
+
+      if (error) {
+        renderRoomOptions([]);
+        setRoomOptionMessage("部屋設定を読み込めませんでした。Supabaseのテーブル設定を確認してください。", "error");
+        return;
+      }
+
+      renderRoomOptions(data || []);
+    }
+
     function roleLabel(role) {
       return role === "teacher" ? "先生" : "生徒";
     }
@@ -745,12 +875,17 @@
       userNameLabel.hidden = true;
       userNameLabel.textContent = "";
       roomForm.hidden = true;
+      roomSettingsPanel.hidden = true;
       if (roomLayout) {
         roomLayout.hidden = true;
       }
       if (requestPanel) {
         requestPanel.hidden = true;
       }
+      if (requestTitle) {
+        requestTitle.textContent = "要望する";
+      }
+      requestSubmit.textContent = "要望を送る";
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
@@ -762,6 +897,8 @@
       passwordToggle.disabled = false;
       roomList.innerHTML = '<p class="empty-rooms">ログインすると自習室リストを確認できます。</p>';
       updateRequestRoomOptions([]);
+      renderRoomOptions([]);
+      setRoomOptionMessage("", "");
       setRequestMessage("", "");
     }
 
@@ -791,7 +928,12 @@
       if (requestPanel) {
         requestPanel.hidden = !isDashboardPage;
       }
+      if (requestTitle) {
+        requestTitle.textContent = role === "teacher" ? "受け付ける" : "要望する";
+      }
+      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "要望を送る";
       roomForm.hidden = !isDashboardPage || role !== "teacher";
+      roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
 
       dashboardTitle.textContent = role === "teacher" ? "先生用 自習室登録画面" : "生徒用 自習室リスト";
       dashboardNote.textContent = role === "teacher"
@@ -858,6 +1000,7 @@
     function finishLocalLogin(account, message) {
       const session = createLocalSession(account);
       renderLoggedIn(session.user, session.profile);
+      loadRoomOptions();
       loadRooms();
       setAuthMessage(message, "success");
       if (!isDashboardPage) {
@@ -1079,6 +1222,11 @@
         return;
       }
 
+      if (!roomName.value) {
+        setRoomMessage("先に下の部屋設定で部屋を追加してください。", "error");
+        return;
+      }
+
       if (!roomForm.reportValidity()) {
         return;
       }
@@ -1090,13 +1238,15 @@
 
       setRoomLoading(true);
       setRoomMessage("", "");
+      const selectedRoomName = roomName.value;
+      const selectedRoomLocation = roomLocation.value;
 
       if (String(currentUser.id).startsWith("local-")) {
         const rooms = getLocalRooms();
         rooms.push({
           id: Date.now(),
-          room_name: roomName.value.trim(),
-          location: roomLocation.value.trim(),
+          room_name: selectedRoomName,
+          location: selectedRoomLocation,
           available_date: availableDate.value,
           start_time: startTime.value,
           end_time: endTime.value,
@@ -1109,14 +1259,15 @@
         setRoomLoading(false);
         roomForm.reset();
         capacity.value = "20";
+        syncSelectedRoomLocation();
         setRoomMessage("自習室を登録しました。", "success");
         await loadRooms();
         return;
       }
 
       const { error } = await appClient.from("study_rooms").insert({
-        room_name: roomName.value.trim(),
-        location: roomLocation.value.trim(),
+        room_name: selectedRoomName,
+        location: selectedRoomLocation,
         available_date: availableDate.value,
         start_time: startTime.value,
         end_time: endTime.value,
@@ -1134,8 +1285,61 @@
 
       roomForm.reset();
       capacity.value = "20";
+      syncSelectedRoomLocation();
       setRoomMessage("自習室を登録しました。", "success");
       await loadRooms();
+    }
+
+    async function handleRoomOptionSubmit(event) {
+      event.preventDefault();
+
+      if (displayRoleForAccount(currentProfile, currentUser) !== "teacher") {
+        setRoomOptionMessage("先生アカウントだけが部屋を設定できます。", "error");
+        return;
+      }
+
+      if (!roomOptionForm.reportValidity()) {
+        return;
+      }
+
+      const payload = {
+        room_name: roomOptionName.value.trim(),
+        location: roomOptionLocation.value.trim(),
+        created_by: currentUser.id
+      };
+
+      setRoomOptionMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const options = getLocalRoomOptions();
+        const exists = options.some((item) => item.room_name === payload.room_name);
+        if (exists) {
+          setRoomOptionMessage("同じ部屋名がすでに設定されています。", "error");
+          return;
+        }
+
+        options.push({
+          id: Date.now(),
+          ...payload,
+          created_at: new Date().toISOString()
+        });
+        saveLocalRoomOptions(options);
+        roomOptionForm.reset();
+        renderRoomOptions(options);
+        setRoomOptionMessage("部屋を追加しました。", "success");
+        return;
+      }
+
+      const { error } = await appClient.from("study_room_options").insert(payload);
+
+      if (error) {
+        setRoomOptionMessage("部屋を追加できませんでした。Supabaseのテーブル設定を確認してください。", "error");
+        return;
+      }
+
+      roomOptionForm.reset();
+      await loadRoomOptions();
+      setRoomOptionMessage("部屋を追加しました。", "success");
     }
 
     function handleRequestSubmit(event) {
@@ -1170,6 +1374,7 @@
 
       const profile = await fetchProfile(session.user);
       renderLoggedIn(session.user, profile);
+      await loadRoomOptions();
       await loadRooms();
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
@@ -1183,6 +1388,8 @@
     });
     signoutButton.addEventListener("click", handleSignOut);
     roomForm.addEventListener("submit", handleRoomSubmit);
+    roomOptionForm.addEventListener("submit", handleRoomOptionSubmit);
+    roomName.addEventListener("change", syncSelectedRoomLocation);
     requestForm.addEventListener("submit", handleRequestSubmit);
     refreshRooms.addEventListener("click", loadRooms);
     passwordToggle.addEventListener("click", () => {
@@ -1209,6 +1416,7 @@
         const localSession = getLocalSession();
         if (localSession?.user && localSession?.profile) {
           renderLoggedIn(localSession.user, localSession.profile);
+          await loadRoomOptions();
           await loadRooms();
           return;
         }

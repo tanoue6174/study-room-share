@@ -3407,7 +3407,7 @@
         .insert(payload);
 
       if (error) {
-        setStudyStartMessage("エラーが発生しました。Supabaseで study_sessions テーブルを作成してください。", "error");
+        setStudyStartMessage("自習を開始できませんでした。Supabaseの study_sessions の権限設定を確認してください。", "error");
         return;
       }
 

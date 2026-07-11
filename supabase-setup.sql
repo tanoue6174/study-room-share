@@ -418,6 +418,7 @@ with check (user_id = auth.uid());
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
 grant select, insert, delete on public.study_room_plans to authenticated;
+grant select, insert, update on public.study_sessions to authenticated;
 
 do $$
 begin
@@ -426,6 +427,9 @@ begin
   end if;
   if to_regclass('public.study_room_plans_id_seq') is not null then
     grant usage, select on sequence public.study_room_plans_id_seq to authenticated;
+  end if;
+  if to_regclass('public.study_sessions_id_seq') is not null then
+    grant usage, select on sequence public.study_sessions_id_seq to authenticated;
   end if;
 end $$;
 

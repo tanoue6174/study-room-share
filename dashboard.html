@@ -1948,6 +1948,21 @@
       };
     }
 
+    function normalizeFriendSearchText(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function friendMatchesQuery(profile, query) {
+      const normalizedQuery = normalizeFriendSearchText(query);
+      if (!normalizedQuery) {
+        return false;
+      }
+
+      const name = normalizeFriendSearchText(profile.display_name);
+      const login = normalizeFriendSearchText(profile.login_id);
+      return name.includes(normalizedQuery) || login.includes(normalizedQuery);
+    }
+
     function renderFriendResults(profiles, friendIds = new Set()) {
       if (!friendResults) {
         return;
@@ -2121,7 +2136,6 @@
       }
 
       if (String(currentUser.id).startsWith("local-")) {
-        const normalizedQuery = query.toLowerCase();
         const accounts = Object.values(getLocalAccounts())
           .map((account) => normalizeFriendProfile({
             id: account.id || `local-${account.login_id}`,
@@ -2131,10 +2145,7 @@
           }))
           .filter((account) => account.role === "student")
           .filter((account) => account.id !== currentUser.id)
-          .filter((account) => (
-            account.display_name.toLowerCase().includes(normalizedQuery) ||
-            String(account.login_id || "").toLowerCase().includes(normalizedQuery)
-          ));
+          .filter((account) => friendMatchesQuery(account, query));
         return { data: accounts, error: null };
       }
 
@@ -2177,7 +2188,11 @@
         return;
       }
 
-      const profiles = (data || []).map(normalizeFriendProfile);
+      const profiles = (data || [])
+        .map(normalizeFriendProfile)
+        .filter((profile) => profile.role === "student")
+        .filter((profile) => profile.id !== currentUser.id)
+        .filter((profile) => friendMatchesQuery(profile, query));
       renderFriendResults(profiles, friendIds);
       setFriendMessage(`${profiles.length}人見つかりました。`, "success");
     }

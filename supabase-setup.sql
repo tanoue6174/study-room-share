@@ -131,6 +131,7 @@ drop policy if exists "Logged in users can create study requests" on public.stud
 drop policy if exists "Students can search student profiles" on public.profiles;
 drop policy if exists "Students can read own friends" on public.student_friends;
 drop policy if exists "Students can create own friends" on public.student_friends;
+drop policy if exists "Students can delete own friends" on public.student_friends;
 drop policy if exists "Students can read own study sessions" on public.study_sessions;
 drop policy if exists "Students can create own study sessions" on public.study_sessions;
 drop policy if exists "Students can update own study sessions" on public.study_sessions;
@@ -321,6 +322,12 @@ with check (
   )
 );
 
+create policy "Students can delete own friends"
+on public.student_friends
+for delete
+to authenticated
+using (user_id = auth.uid());
+
 create policy "Students can read own study sessions"
 on public.study_sessions
 for select
@@ -349,4 +356,4 @@ using (user_id = auth.uid())
 with check (user_id = auth.uid());
 
 grant select on public.profiles to authenticated;
-grant select, insert on public.student_friends to authenticated;
+grant select, insert, delete on public.student_friends to authenticated;

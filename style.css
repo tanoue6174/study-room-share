@@ -1096,6 +1096,29 @@ p {
   cursor: default;
 }
 
+.friend-remove-button {
+  flex: 0 0 auto;
+  border: 1px solid #f0b8a8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fff7f4;
+  color: #a33a24;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.friend-remove-button:hover {
+  background: #ffece5;
+}
+
+.friend-remove-button:disabled {
+  border-color: var(--line);
+  background: #eef2f5;
+  color: var(--muted);
+  cursor: default;
+}
+
 .request-summary h4 {
   margin-bottom: 10px;
   color: #173b78;

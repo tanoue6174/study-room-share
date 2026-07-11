@@ -13,6 +13,7 @@ alter table public.student_friends enable row level security;
 drop policy if exists "Students can search student profiles" on public.profiles;
 drop policy if exists "Students can read own friends" on public.student_friends;
 drop policy if exists "Students can create own friends" on public.student_friends;
+drop policy if exists "Students can delete own friends" on public.student_friends;
 
 create policy "Students can search student profiles"
 on public.profiles
@@ -49,5 +50,11 @@ with check (
   )
 );
 
+create policy "Students can delete own friends"
+on public.student_friends
+for delete
+to authenticated
+using (user_id = auth.uid());
+
 grant select on public.profiles to authenticated;
-grant select, insert on public.student_friends to authenticated;
+grant select, insert, delete on public.student_friends to authenticated;

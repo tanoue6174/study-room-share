@@ -1999,15 +1999,24 @@
       friends.forEach((friend) => {
         const item = document.createElement("article");
         item.className = "friend-item is-added";
+        const friendId = friend.friend_id || friend.id;
+        const friendName = friend.display_name || friend.friend_name || "名前なし";
 
         const nameWrap = document.createElement("div");
         const name = document.createElement("strong");
-        name.textContent = friend.display_name || friend.friend_name || "名前なし";
+        name.textContent = friendName;
         const meta = document.createElement("span");
         meta.textContent = "生徒";
         nameWrap.append(name, meta);
 
-        item.appendChild(nameWrap);
+        const removeButton = document.createElement("button");
+        removeButton.className = "friend-remove-button";
+        removeButton.type = "button";
+        removeButton.dataset.friendId = friendId;
+        removeButton.dataset.friendName = friendName;
+        removeButton.textContent = "解除";
+
+        item.append(nameWrap, removeButton);
         friendList.appendChild(item);
       });
     }
@@ -2231,6 +2240,52 @@
       button.textContent = "追加済み";
       await loadFriends();
       setFriendMessage(`${friendName} さんを友達に追加しました。`, "success");
+    }
+
+    async function handleFriendRemove(event) {
+      const button = event.target.closest(".friend-remove-button");
+      if (!button || button.disabled) {
+        return;
+      }
+
+      const friendId = button.dataset.friendId;
+      const friendName = button.dataset.friendName || "この友達";
+      if (!friendId) {
+        setFriendMessage("エラーが発生しました。", "error");
+        return;
+      }
+
+      if (!window.confirm(`${friendName} さんを友達から解除しますか？`)) {
+        return;
+      }
+
+      button.disabled = true;
+      setFriendMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const friends = getLocalFriends().filter((friend) => !(
+          friend.user_id === currentUser.id && String(friend.friend_id) === String(friendId)
+        ));
+        saveLocalFriends(friends);
+        await loadFriends();
+        setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
+        return;
+      }
+
+      const { error } = await appClient
+        .from("student_friends")
+        .delete()
+        .eq("user_id", currentUser.id)
+        .eq("friend_id", friendId);
+
+      if (error) {
+        button.disabled = false;
+        setFriendMessage("エラーが発生しました。Supabaseの友達解除ポリシーを確認してください。", "error");
+        return;
+      }
+
+      await loadFriends();
+      setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
     }
 
     function finishLocalLogin(account, message) {
@@ -3006,6 +3061,7 @@
     if (friendSearchForm) {
       friendSearchForm.addEventListener("submit", handleFriendSearch);
       friendResults.addEventListener("click", handleFriendAdd);
+      friendList.addEventListener("click", handleFriendRemove);
     }
     refreshRooms.addEventListener("click", loadRooms);
     if (passwordToggle) {

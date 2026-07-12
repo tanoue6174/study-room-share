@@ -296,7 +296,10 @@
         </div>
 
         <div class="friend-list-wrap">
-          <h4>友達</h4>
+          <div class="friend-list-toolbar">
+            <h4>&#21451;&#36948;</h4>
+            <button class="button auth-button-muted" id="refresh-friends" type="button">&#26356;&#26032;</button>
+          </div>
           <div class="friend-list" id="friend-list" aria-live="polite">
             <p class="empty-rooms">いません</p>
           </div>
@@ -676,6 +679,7 @@
     const friendMessage = document.getElementById("friend-message");
     const friendResults = document.getElementById("friend-results");
     const friendList = document.getElementById("friend-list");
+    const refreshFriends = document.getElementById("refresh-friends");
     const selfCommentText = document.getElementById("self-comment-text");
     const selfCommentEdit = document.getElementById("self-comment-edit");
 
@@ -788,6 +792,7 @@
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
       setText('.friend-list-wrap h4', '友達');
+      setText('#refresh-friends', '\u66f4\u65b0');
       setPlaceholder('#display-name', '学校内で使う名前');
       setPlaceholder('#account-password', 'パスワード');
       setPlaceholder('#room-location', '場所説明');
@@ -2845,6 +2850,40 @@
       setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
     }
 
+
+    async function refreshRoomListData() {
+      if (!currentUser) {
+        await loadRooms();
+        return;
+      }
+
+      await loadRequests();
+      if (displayRoleForAccount(currentProfile, currentUser) === "student") {
+        await loadFriends();
+        await loadStudySession();
+      }
+      await loadRooms();
+    }
+
+    async function refreshFriendListData() {
+      if (!currentUser || displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        return;
+      }
+
+      if (refreshFriends) {
+        refreshFriends.disabled = true;
+      }
+      setFriendMessage("", "");
+
+      await loadFriends();
+      await loadRooms();
+
+      if (refreshFriends) {
+        refreshFriends.disabled = false;
+      }
+      setFriendMessage("\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002", "success");
+    }
+
     function finishLocalLogin(account, message) {
       const session = createLocalSession(account);
       renderLoggedIn(session.user, session.profile);
@@ -3835,7 +3874,10 @@
     if (selfCommentEdit) {
       selfCommentEdit.addEventListener("click", handleSelfCommentEdit);
     }
-    refreshRooms.addEventListener("click", loadRooms);
+    refreshRooms.addEventListener("click", refreshRoomListData);
+    if (refreshFriends) {
+      refreshFriends.addEventListener("click", refreshFriendListData);
+    }
     if (passwordToggle) {
       passwordToggle.addEventListener("click", () => {
         const shouldShow = accountPassword.type === "password";

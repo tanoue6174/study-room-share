@@ -1204,6 +1204,14 @@ p {
   margin-top: 22px;
 }
 
+.friend-list-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .self-comment-card {
   display: flex;
   gap: 12px;
@@ -1248,7 +1256,7 @@ p {
 }
 
 .friend-list-wrap h4 {
-  margin-bottom: 10px;
+  margin-bottom: 0;
   color: #173b78;
   font-size: 18px;
 }

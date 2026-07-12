@@ -210,7 +210,6 @@
             <select id="request-date" name="request-date" required></select>
             <button class="button primary request-submit" id="request-submit" type="submit" disabled>受付を追加</button>
           </div>
-          <button class="button request-finish" id="request-finish" type="button" hidden>受付を終わる</button>
           <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
         </form>
 
@@ -297,8 +296,8 @@
 
         <div class="friend-list-wrap">
           <div class="friend-list-toolbar">
-            <h4>&#21451;&#36948;</h4>
-            <button class="button auth-button-muted" id="refresh-friends" type="button">&#26356;&#26032;</button>
+            <h4>友達</h4>
+            <button class="button auth-button-muted" id="refresh-friends" type="button">更新</button>
           </div>
           <div class="friend-list" id="friend-list" aria-live="polite">
             <p class="empty-rooms">いません</p>
@@ -656,7 +655,6 @@
     const requestDateStep = document.getElementById("request-date-step");
     const requestTitle = document.getElementById("request-title");
     const requestSubmit = document.getElementById("request-submit");
-    const requestFinish = document.getElementById("request-finish");
     const requestMessage = document.getElementById("request-message");
     const requestSummaryList = document.getElementById("request-summary-list");
     const studentReceptionPanel = document.getElementById("student-reception-panel");
@@ -779,7 +777,6 @@
       setText('label[for="request-date"]', '日');
       setText('#request-next', '次へ');
       setText('#request-submit', '受付を追加');
-      setText('#request-finish', '受付を終わる');
       setText('#request-summary-title', '希望受付リスト');
       setText('.request-summary th:nth-child(1)', '日');
       setText('.request-summary th:nth-child(2)', '部屋');
@@ -799,7 +796,7 @@
       setText('label[for="friend-search"]', '名前で検索');
       setText('#friend-search-submit', '検索');
       setText('.friend-list-wrap h4', '友達');
-      setText('#refresh-friends', '\u66f4\u65b0');
+      setText('#refresh-friends', '更新');
       setPlaceholder('#display-name', '学校内で使う名前');
       setPlaceholder('#account-password', 'パスワード');
       setPlaceholder('#room-location', '場所説明');
@@ -2044,7 +2041,6 @@
       setRoomOptionMessage("", "");
       renderRequestSummary([], []);
       renderStudentReceptions([], []);
-      requestFinish.hidden = true;
       setRequestMessage("", "");
       updateStudyStartRoomOptions([]);
       renderStudyStatus(null);
@@ -2449,6 +2445,7 @@
         const friendId = friend.friend_id || friend.id;
         const friendName = friend.display_name || friend.friend_name || "名前なし";
         const activeSession = friend.activeStudySession || null;
+        const weeklyStudyMinutes = Number(friend.weeklyStudyMinutes || 0);
         if (activeSession) {
           item.classList.add("is-studying");
         }
@@ -2467,7 +2464,6 @@
         name.textContent = friendName;
         nameRow.appendChild(name);
 
-
         const durationLabel = formatStudyDuration(activeSession?.started_at);
         if (durationLabel) {
           const duration = document.createElement("span");
@@ -2478,7 +2474,10 @@
 
         const meta = document.createElement("span");
         meta.textContent = "生徒";
-        nameWrap.append(nameRow, meta);
+        const weeklyTotal = document.createElement("span");
+        weeklyTotal.className = "friend-weekly-total";
+        weeklyTotal.textContent = `今週: ${formatWeeklyStudyTotal(weeklyStudyMinutes)}`;
+        nameWrap.append(nameRow, meta, weeklyTotal);
 
         const statusWrap = document.createElement("div");
         statusWrap.className = "friend-status-block";
@@ -2506,7 +2505,6 @@
       });
     }
 
-
     function formatStudyDuration(value) {
       if (!value) {
         return "";
@@ -2521,10 +2519,76 @@
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
       if (hours <= 0) {
-        return `${minutes}\u5206`;
+        return `${minutes}分`;
       }
 
-      return minutes ? `${hours}\u6642\u9593${minutes}\u5206` : `${hours}\u6642\u9593`;
+      return minutes ? `${hours}時間${minutes}分` : `${hours}時間`;
+    }
+
+    function formatWeeklyStudyTotal(totalMinutes) {
+      const safeMinutes = Math.max(0, Math.floor(Number(totalMinutes) || 0));
+      const hours = Math.floor(safeMinutes / 60);
+      const minutes = safeMinutes % 60;
+      if (hours <= 0) {
+        return `${minutes}分`;
+      }
+
+      return minutes ? `${hours}時間${minutes}分` : `${hours}時間`;
+    }
+
+    function getWeekStartDate() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - diff);
+      return start;
+    }
+
+    function getStudySessionEndDate(session) {
+      if (session?.ended_at) {
+        const endedAt = new Date(session.ended_at);
+        if (!Number.isNaN(endedAt.getTime())) {
+          return endedAt;
+        }
+      }
+
+      if (session?.active !== false) {
+        return new Date();
+      }
+
+      return null;
+    }
+
+    function calculateStudySessionMinutes(session) {
+      const startedAt = new Date(session?.started_at || "");
+      const endedAt = getStudySessionEndDate(session);
+      if (Number.isNaN(startedAt.getTime()) || !endedAt || Number.isNaN(endedAt.getTime())) {
+        return 0;
+      }
+
+      return Math.max(0, Math.floor((endedAt.getTime() - startedAt.getTime()) / 60000));
+    }
+
+    function getWeeklyStudyMinutesByUser(sessions, userIds) {
+      const weekStart = getWeekStartDate();
+      const idSet = new Set(userIds.map((id) => String(id)));
+      const totals = new Map();
+      sessions.forEach((session) => {
+        const userId = String(session?.user_id || "");
+        if (!idSet.has(userId)) {
+          return;
+        }
+
+        const sessionEnd = getStudySessionEndDate(session);
+        if (!sessionEnd || sessionEnd < weekStart) {
+          return;
+        }
+
+        totals.set(userId, (totals.get(userId) || 0) + calculateStudySessionMinutes(session));
+      });
+      return totals;
     }
 
     function renderStudyStatus(session) {
@@ -2609,6 +2673,10 @@
         const activeSessions = getLocalStudySessions()
           .filter((session) => session.active !== false)
           .sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)));
+        const localFriendIds = localFriends.map((friend) => (
+          friend.user_id === currentUser.id ? friend.friend_id : friend.user_id
+        )).filter(Boolean);
+        const weeklyMinutesByUser = getWeeklyStudyMinutesByUser(getLocalStudySessions(), localFriendIds);
         const enrichedLocalFriends = localFriends.map((friend) => {
           const otherId = friend.user_id === currentUser.id ? friend.friend_id : friend.user_id;
           const account = accounts.find((item) => String(item.id || `local-${item.login_id}`) === String(otherId));
@@ -2618,6 +2686,7 @@
             friend_id: otherId,
             display_name: account?.display_name || friend.display_name || friend.friend_name,
             comment: normalizeSelfComment(account?.self_comment),
+            weeklyStudyMinutes: weeklyMinutesByUser.get(String(otherId)) || 0,
             activeStudySession: activeSessions.find((session) => String(session.user_id) === String(otherId)) || null
           };
         });
@@ -2671,7 +2740,7 @@
       if (friendIds.length) {
         const { data: friendSessions, error: sessionError } = await appClient
           .from("study_sessions")
-          .select("id, user_id, room_id, room_name, location, ends_at, active, started_at")
+          .select("id, user_id, room_id, room_name, location, ends_at, active, started_at, ended_at")
           .in("user_id", friendIds)
           .eq("active", true)
           .order("started_at", { ascending: false });
@@ -2686,6 +2755,19 @@
           remoteFriends = remoteFriends.map((friend) => ({
             ...friend,
             activeStudySession: sessionByUserId.get(String(friend.id)) || null
+          }));
+        }
+
+        const { data: weeklySessions, error: weeklyError } = await appClient
+          .from("study_sessions")
+          .select("id, user_id, active, started_at, ended_at")
+          .in("user_id", friendIds)
+          .gte("started_at", getWeekStartDate().toISOString());
+        if (!weeklyError) {
+          const weeklyMinutesByUser = getWeeklyStudyMinutesByUser(weeklySessions || [], friendIds);
+          remoteFriends = remoteFriends.map((friend) => ({
+            ...friend,
+            weeklyStudyMinutes: weeklyMinutesByUser.get(String(friend.id)) || 0
           }));
         }
       }
@@ -2902,7 +2984,6 @@
       setFriendMessage(`${friendName} さんを友達から解除しました。`, "success");
     }
 
-
     async function refreshRoomListData() {
       if (!currentUser) {
         await loadRooms();
@@ -2933,7 +3014,7 @@
       if (refreshFriends) {
         refreshFriends.disabled = false;
       }
-      setFriendMessage("\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002", "success");
+      setFriendMessage("更新しました。", "success");
     }
 
     function finishLocalLogin(account, message) {
@@ -3073,18 +3154,17 @@
         }
         const list = document.createElement("div");
         list.className = "reception-result-list";
-        roomReceptions
-          .sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date)))
-          .forEach((item) => {
+        groupReceptionsByDate(roomReceptions).forEach(({ receptionDate, receptions: dateReceptions }) => {
             const row = document.createElement("div");
             row.className = "reception-result-row";
             const date = document.createElement("span");
-            date.textContent = formatSelectedDate(item.reception_date);
+            date.textContent = formatSelectedDate(receptionDate);
             const count = document.createElement("strong");
-            count.textContent = `${votes.filter((vote) => String(vote.reception_id) === String(item.id)).length}人`;
+            const receptionIds = new Set(dateReceptions.map((item) => String(item.id)));
+            count.textContent = `${votes.filter((vote) => receptionIds.has(String(vote.reception_id))).length}人`;
             row.append(date, count);
             list.appendChild(row);
-          });
+        });
         group.append(heading, list);
         requestSummaryList.appendChild(group);
       });
@@ -3101,16 +3181,23 @@
       return Array.from(groups.values()).sort((a, b) => a.roomName.localeCompare(b.roomName, "ja"));
     }
 
+    function groupReceptionsByDate(receptions) {
+      const groups = new Map();
+      receptions.forEach((reception) => {
+        const key = String(reception.reception_date || "");
+        const group = groups.get(key) || { receptionDate: reception.reception_date, receptions: [] };
+        group.receptions.push(reception);
+        groups.set(key, group);
+      });
+      return Array.from(groups.values()).sort((a, b) => String(a.receptionDate).localeCompare(String(b.receptionDate)));
+    }
+
     function renderStudentReceptions(receptions, votes) {
       if (!studentReceptionList || !currentUser) return;
       studentReceptionList.innerHTML = "";
       const votedIds = new Set(votes.filter((vote) => String(vote.student_id) === String(currentUser.id)).map((vote) => String(vote.reception_id)));
-      const visible = receptions.filter((reception) => !votedIds.has(String(reception.id)));
-      if (!visible.length) {
-        studentReceptionList.innerHTML = '<p class="empty-rooms">いません</p>';
-        return;
-      }
-      groupReceptionsByRoom(visible).forEach(({ roomName, receptions: roomReceptions }) => {
+      let hasVisibleReception = false;
+      groupReceptionsByRoom(receptions).forEach(({ roomName, receptions: roomReceptions }) => {
         const group = document.createElement("section");
         group.className = "reception-group";
         const title = document.createElement("h5");
@@ -3118,22 +3205,28 @@
         title.textContent = roomName;
         const list = document.createElement("div");
         list.className = "reception-result-list";
-        roomReceptions.sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date))).forEach((reception) => {
+        groupReceptionsByDate(roomReceptions).forEach(({ receptionDate, receptions: dateReceptions }) => {
+          if (dateReceptions.some((reception) => votedIds.has(String(reception.id)))) return;
+          hasVisibleReception = true;
           const row = document.createElement("div");
           row.className = "reception-result-row";
           const date = document.createElement("span");
-          date.textContent = formatSelectedDate(reception.reception_date);
+          date.textContent = formatSelectedDate(receptionDate);
           const voteButton = document.createElement("button");
           voteButton.type = "button";
           voteButton.className = "button primary reception-vote-button";
-          voteButton.dataset.receptionId = reception.id;
+          voteButton.dataset.receptionIds = dateReceptions.map((reception) => reception.id).join(",");
           voteButton.textContent = "投票する";
           row.append(date, voteButton);
           list.appendChild(row);
         });
+        if (!list.children.length) return;
         group.append(title, list);
         studentReceptionList.appendChild(group);
       });
+      if (!hasVisibleReception) {
+        studentReceptionList.innerHTML = '<p class="empty-rooms">いません</p>';
+      }
     }
 
     async function loadRequests() {
@@ -3150,7 +3243,6 @@
         currentReceptionVotes = getLocalReceptionVotes();
         renderRequestSummary(currentReceptions, currentReceptionVotes);
         renderStudentReceptions(currentReceptions, currentReceptionVotes);
-        requestFinish.hidden = !currentReceptions.length;
         return;
       }
 
@@ -3169,7 +3261,6 @@
       currentReceptionVotes = votes || [];
       renderRequestSummary(currentReceptions, currentReceptionVotes);
       renderStudentReceptions(currentReceptions, currentReceptionVotes);
-      requestFinish.hidden = !currentReceptions.some((item) => String(item.created_by) === String(currentUser.id));
     }
 
     async function handleSignUp() {
@@ -3597,6 +3688,16 @@
         return;
       }
 
+      const duplicateReception = currentReceptions.some((reception) => (
+        String(reception.created_by) === String(currentUser.id)
+        && String(reception.room_option_id) === String(requestRoom.value)
+        && String(reception.reception_date) === String(requestDate.value)
+      ));
+      if (duplicateReception) {
+        setRequestMessage("同じ部屋・日の受付はすでにあります。", "error");
+        return;
+      }
+
       const receptionPayload = {
         room_option_id: requestRoom.value,
         room_name: requestRoom.options[requestRoom.selectedIndex].textContent,
@@ -3639,28 +3740,6 @@
       requestDate.focus();
     }
 
-    async function handleReceptionFinish() {
-      const ownReceptions = currentReceptions.filter((item) => String(item.created_by) === String(currentUser?.id));
-      if (!ownReceptions.length || !window.confirm("受付を終了しますか？投票結果も含めて全員の一覧から消えます。")) return;
-      const ids = ownReceptions.map((item) => item.id);
-      if (String(currentUser.id).startsWith("local-")) {
-        saveLocalReceptions(getLocalReceptions().filter((item) => !ids.includes(item.id)));
-        saveLocalReceptionVotes(getLocalReceptionVotes().filter((vote) => !ids.includes(vote.reception_id)));
-        await loadRequests();
-        resetReceptionForm();
-        setRequestMessage("受付を終了しました。", "success");
-        return;
-      }
-      const { error } = await appClient.from("study_receptions").delete().in("id", ids).eq("created_by", currentUser.id);
-      if (error) {
-        setRequestMessage("受付を終了できませんでした。", "error");
-        return;
-      }
-      await loadRequests();
-      resetReceptionForm();
-      setRequestMessage("受付を終了しました。", "success");
-    }
-
     async function handleReceptionGroupDelete(event) {
       const button = event.target.closest(".reception-delete-button");
       if (!button) return;
@@ -3686,17 +3765,22 @@
     async function handleReceptionVote(event) {
       const button = event.target.closest(".reception-vote-button");
       if (!button || !currentUser) return;
-      const receptionId = button.dataset.receptionId;
+      const receptionIds = String(button.dataset.receptionIds || "").split(",").filter(Boolean);
+      if (!receptionIds.length) return;
       button.disabled = true;
       if (String(currentUser.id).startsWith("local-")) {
         const votes = getLocalReceptionVotes();
-        votes.push({ id: Date.now(), reception_id: Number(receptionId), student_id: currentUser.id, created_at: new Date().toISOString() });
+        receptionIds.forEach((receptionId, index) => {
+          votes.push({ id: Date.now() + index, reception_id: Number(receptionId), student_id: currentUser.id, created_at: new Date().toISOString() });
+        });
         saveLocalReceptionVotes(votes);
         await loadRequests();
         studentReceptionMessage.textContent = "投票しました。";
         return;
       }
-      const { error } = await appClient.from("study_reception_votes").insert({ reception_id: receptionId, student_id: currentUser.id });
+      const { error } = await appClient.from("study_reception_votes").insert(
+        receptionIds.map((receptionId) => ({ reception_id: receptionId, student_id: currentUser.id }))
+      );
       if (error) {
         button.disabled = false;
         studentReceptionMessage.textContent = "投票できませんでした。";
@@ -3904,7 +3988,6 @@
     requestDate.addEventListener("change", updateReceptionStep);
     requestForm.addEventListener("submit", handleRequestSubmit);
     requestNext.addEventListener("click", handleRequestNext);
-    requestFinish.addEventListener("click", handleReceptionFinish);
     requestSummaryList.addEventListener("click", handleReceptionGroupDelete);
     if (studentReceptionList) {
       studentReceptionList.addEventListener("click", handleReceptionVote);

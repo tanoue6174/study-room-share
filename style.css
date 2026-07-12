@@ -780,6 +780,27 @@ p {
   margin-top: 16px;
 }
 
+.study-start-form label {
+  color: #173b78;
+  font-weight: 800;
+}
+
+.study-start-form select,
+.study-start-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+}
+
+.study-custom-room-field {
+  display: grid;
+  gap: 8px;
+}
+
 .study-status {
   margin-top: 16px;
 }
@@ -791,6 +812,14 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f7fbff;
+}
+
+.study-end-button {
+  width: 100%;
+  margin-top: 8px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .study-status-item strong {
@@ -1145,8 +1174,23 @@ p {
   min-width: 0;
 }
 
+.friend-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
 .friend-item strong {
   color: #173b78;
+}
+
+.friend-name-block.is-studying strong {
+  color: #16833a;
+}
+
+.friend-item .friend-study-start-time {
+  color: #16833a;
 }
 
 .friend-item span {

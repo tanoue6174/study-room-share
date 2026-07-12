@@ -252,6 +252,11 @@
           </select>
           <p class="field-help" id="study-start-room-description" hidden></p>
 
+          <div class="study-custom-room-field" id="study-custom-room-field" hidden>
+            <label for="study-custom-room-name">場所の名前</label>
+            <input id="study-custom-room-name" name="study-custom-room-name" type="text" maxlength="5" placeholder="5字以内" autocomplete="off">
+          </div>
+
           <label for="study-end-time">いつまで</label>
           <select id="study-end-time" name="study-end-time" size="6"></select>
 
@@ -657,6 +662,8 @@
     const studyStartForm = document.getElementById("study-start-form");
     const studyStartRoom = document.getElementById("study-start-room");
     const studyStartRoomDescription = document.getElementById("study-start-room-description");
+    const studyCustomRoomField = document.getElementById("study-custom-room-field");
+    const studyCustomRoomName = document.getElementById("study-custom-room-name");
     const studyEndTime = document.getElementById("study-end-time");
     const studyStartSubmit = document.getElementById("study-start-submit");
     const studyStartMessage = document.getElementById("study-start-message");
@@ -676,6 +683,7 @@
     let currentRequests = [];
     let currentRoomPlans = [];
     let currentFriends = [];
+    let currentStudySession = null;
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
     const LOCAL_ACCOUNTS_KEY = "study-room-share-local-accounts";
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
@@ -762,6 +770,7 @@
       setText('#study-start-title', '自習を開始する');
       setText('#study-start-panel .request-heading p:last-child', '今どこで自習しているかを登録できます。');
       setText('label[for="study-start-room"]', '自習している部屋');
+      setText('label[for="study-custom-room-name"]', '場所の名前');
       setText('label[for="study-end-time"]', 'いつまで');
       setText('#study-start-submit', '自習を開始する');
       setText('#friends-title', '友達');
@@ -1740,12 +1749,21 @@
       }
 
       const selectedOption = studyStartRoom.options?.[studyStartRoom.selectedIndex];
+      const isUnspecifiedRoom = studyStartRoom.value === "unspecified";
       const location = selectedOption?.dataset.location || "";
       const start = selectedOption?.dataset.startTime || "";
       const end = selectedOption?.dataset.endTime || "";
       const detail = [location, start && end ? `${start}-${end}` : ""].filter(Boolean).join(" / ");
       studyStartRoomDescription.textContent = detail;
       studyStartRoomDescription.hidden = !detail;
+
+      if (studyCustomRoomField) {
+        studyCustomRoomField.hidden = !isUnspecifiedRoom;
+      }
+
+      if (!isUnspecifiedRoom && studyCustomRoomName) {
+        studyCustomRoomName.value = "";
+      }
     }
 
     function syncSelectedRoomLocation() {
@@ -2362,16 +2380,33 @@
         item.className = "friend-item is-added";
         const friendId = friend.friend_id || friend.id;
         const friendName = friend.display_name || friend.friend_name || "名前なし";
+        const activeSession = friend.activeStudySession || null;
         const studyText = friend.study_status || "勉強状況";
         const commentText = friend.comment || "コメント";
 
         const nameWrap = document.createElement("div");
         nameWrap.className = "friend-name-block";
+        if (activeSession) {
+          nameWrap.classList.add("is-studying");
+        }
+
+        const nameRow = document.createElement("div");
+        nameRow.className = "friend-name-row";
         const name = document.createElement("strong");
         name.textContent = friendName;
+        nameRow.appendChild(name);
+
+        const startTimeLabel = formatSessionStartTime(activeSession?.started_at);
+        if (startTimeLabel) {
+          const start = document.createElement("span");
+          start.className = "friend-study-start-time";
+          start.textContent = startTimeLabel;
+          nameRow.appendChild(start);
+        }
+
         const meta = document.createElement("span");
         meta.textContent = "生徒";
-        nameWrap.append(name, meta);
+        nameWrap.append(nameRow, meta);
 
         const statusWrap = document.createElement("div");
         statusWrap.className = "friend-status-block";
@@ -2399,12 +2434,29 @@
       });
     }
 
+    function formatSessionStartTime(value) {
+      if (!value) {
+        return "";
+      }
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return String(value).slice(0, 5);
+      }
+
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    }
+
     function renderStudyStatus(session) {
       if (!studyStatus) {
         return;
       }
 
+      currentStudySession = session || null;
       studyStatus.innerHTML = "";
+      if (studyStartForm) {
+        studyStartForm.hidden = Boolean(session);
+      }
 
       if (!session) {
         studyStatus.innerHTML = '<p class="empty-rooms">まだ自習を開始していません。</p>';
@@ -2414,14 +2466,19 @@
       const item = document.createElement("article");
       item.className = "study-status-item";
 
-      const title = document.createElement("strong");
-      title.textContent = session.room_name || "部屋名なし";
+      const endRow = document.createElement("span");
+      endRow.textContent = `終わる予定: ${session.ends_at || "まだだよ"}`;
 
-      const details = document.createElement("span");
-      const untilText = session.ends_at ? ` / ${session.ends_at}まで` : "";
-      details.textContent = `${session.location || "場所説明なし"}${untilText}`;
+      const roomRow = document.createElement("strong");
+      roomRow.textContent = `場所: ${session.room_name || "指定なし"}`;
 
-      item.append(title, details);
+      const endButton = document.createElement("button");
+      endButton.className = "button primary study-end-button";
+      endButton.type = "button";
+      endButton.dataset.studySessionId = session.id || "";
+      endButton.textContent = "自習を終わる";
+
+      item.append(endRow, roomRow, endButton);
       studyStatus.appendChild(item);
     }
 
@@ -2469,6 +2526,9 @@
 
       if (String(currentUser.id).startsWith("local-")) {
         const accounts = Object.values(getLocalAccounts());
+        const activeSessions = getLocalStudySessions()
+          .filter((session) => session.active !== false)
+          .sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)));
         const enrichedLocalFriends = localFriends.map((friend) => {
           const otherId = friend.user_id === currentUser.id ? friend.friend_id : friend.user_id;
           const account = accounts.find((item) => String(item.id || `local-${item.login_id}`) === String(otherId));
@@ -2477,7 +2537,8 @@
             id: otherId,
             friend_id: otherId,
             display_name: account?.display_name || friend.display_name || friend.friend_name,
-            comment: normalizeSelfComment(account?.self_comment)
+            comment: normalizeSelfComment(account?.self_comment),
+            activeStudySession: activeSessions.find((session) => String(session.user_id) === String(otherId)) || null
           };
         });
         currentFriends = enrichedLocalFriends;
@@ -2525,6 +2586,27 @@
               comment: normalizeSelfComment(profile?.self_comment)
             };
           });
+        }
+      }
+      if (friendIds.length) {
+        const { data: friendSessions, error: sessionError } = await appClient
+          .from("study_sessions")
+          .select("id, user_id, room_id, room_name, location, ends_at, active, started_at")
+          .in("user_id", friendIds)
+          .eq("active", true)
+          .order("started_at", { ascending: false });
+        if (!sessionError) {
+          const sessionByUserId = new Map();
+          (friendSessions || []).forEach((session) => {
+            const userId = String(session.user_id);
+            if (!sessionByUserId.has(userId)) {
+              sessionByUserId.set(userId, session);
+            }
+          });
+          remoteFriends = remoteFriends.map((friend) => ({
+            ...friend,
+            activeStudySession: sessionByUserId.get(String(friend.id)) || null
+          }));
         }
       }
       if (localFriends.length) {
@@ -3417,6 +3499,7 @@
       }
       const isUnspecifiedRoom = studyStartRoom.value === "unspecified";
       const selectedRoom = studyStartOptionToRoom(selectedOption);
+      const customRoomName = studyCustomRoomName?.value.trim() || "";
 
       if (!isUnspecifiedRoom && !canStartStudyInRoom(selectedRoom)) {
         setStudyStartMessage("この自習室はまだ使える時間になっていないか、終了時間を過ぎているため選べません。", "error");
@@ -3424,10 +3507,15 @@
         return;
       }
 
+      if (isUnspecifiedRoom && customRoomName.length > 5) {
+        setStudyStartMessage("場所の名前は5字以内にしてください。", "error");
+        return;
+      }
+
       const payload = {
         user_id: currentUser.id,
         room_id: isUnspecifiedRoom ? null : Number(studyStartRoom.value),
-        room_name: selectedOption.dataset.roomName || selectedOption.textContent,
+        room_name: isUnspecifiedRoom ? customRoomName || "指定なし" : selectedOption.dataset.roomName || selectedOption.textContent,
         location: selectedOption.dataset.location || "",
         ends_at: studyEndTime.value || null,
         active: true,
@@ -3478,6 +3566,64 @@
         return;
       }
       setStudyStartMessage("自習を開始しました。", "success");
+    }
+
+    async function handleStudyEndClick(event) {
+      const button = event.target.closest(".study-end-button");
+      if (!button || !currentUser || !currentStudySession) {
+        return;
+      }
+
+      button.disabled = true;
+      setStudyStartMessage("", "");
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const sessions = getLocalStudySessions().map((session) => (
+          String(session.id) === String(currentStudySession.id)
+            || (String(session.user_id) === String(currentUser.id) && session.active !== false)
+            ? { ...session, active: false }
+            : session
+        ));
+        saveLocalStudySessions(sessions);
+        currentStudySession = null;
+        renderStudyStatus(null);
+        studyStartForm?.reset();
+        syncSelectedStudyStartRoomDescription();
+        setStudyStartMessage("自習を終了しました。", "success");
+        return;
+      }
+
+      const updateQuery = appClient
+        .from("study_sessions")
+        .update({ active: false });
+      if (currentStudySession.id) {
+        updateQuery.eq("id", currentStudySession.id);
+      } else {
+        updateQuery.eq("user_id", currentUser.id).eq("active", true);
+      }
+
+      const { error } = await updateQuery;
+      if (error) {
+        button.disabled = false;
+        setStudyStartMessage("自習を終了できませんでした。Supabaseの study_sessions の権限設定を確認してください。", "error");
+        return;
+      }
+
+      if (currentStudySession.room_id) {
+        await appClient
+          .from("study_room_plans")
+          .delete()
+          .eq("room_id", currentStudySession.room_id)
+          .eq("user_id", currentUser.id);
+      }
+
+      currentStudySession = null;
+      renderStudyStatus(null);
+      studyStartForm?.reset();
+      syncSelectedStudyStartRoomDescription();
+      await loadFriends();
+      await loadRooms();
+      setStudyStartMessage("自習を終了しました。", "success");
     }
 
     async function handleSession(session) {
@@ -3538,6 +3684,7 @@
       });
       studyEndTime.addEventListener("focus", buildStudyEndTimeOptions);
       studyStartForm.addEventListener("submit", handleStudyStartSubmit);
+      studyStatus.addEventListener("click", handleStudyEndClick);
     }
     if (friendSearchForm) {
       friendSearchForm.addEventListener("submit", handleFriendSearch);

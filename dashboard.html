@@ -216,22 +216,7 @@
 
         <div class="request-summary" aria-labelledby="request-summary-title">
           <h4 id="request-summary-title">希望受付リスト</h4>
-          <div class="table-wrap compact-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>日</th>
-                  <th>部屋</th>
-                  <th>人数</th>
-                </tr>
-              </thead>
-              <tbody id="request-summary-list">
-                <tr>
-                  <td colspan="3">縺・∪縺帙ｓ</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <div class="reception-group-list" id="request-summary-list"><p class="empty-rooms">いません</p></div>
         </div>
       </section>
 
@@ -243,12 +228,7 @@
           </div>
           <p>投票すると、この一覧から表示されなくなります。</p>
         </div>
-        <div class="table-wrap compact-table">
-          <table>
-            <thead><tr><th>日</th><th>部屋</th><th>投票</th></tr></thead>
-            <tbody id="student-reception-list"><tr><td colspan="3">いません</td></tr></tbody>
-          </table>
-        </div>
+        <div class="reception-group-list" id="student-reception-list"><p class="empty-rooms">いません</p></div>
         <p class="request-message" id="student-reception-message" role="status" aria-live="polite"></p>
       </section>
 
@@ -2975,29 +2955,59 @@
       requestSummaryList.innerHTML = "";
 
       if (!receptions.length) {
-        requestSummaryList.innerHTML = '<tr><td colspan="3">いません</td></tr>';
+        requestSummaryList.innerHTML = '<p class="empty-rooms">いません</p>';
         return;
       }
 
-      receptions
-        .sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date)))
-        .forEach((item) => {
-          const row = document.createElement("tr");
-          const timeCell = document.createElement("td");
-          const roomCell = document.createElement("td");
-          const countCell = document.createElement("td");
+      groupReceptionsByRoom(receptions).forEach(({ roomName, receptions: roomReceptions }) => {
+        const group = document.createElement("section");
+        group.className = "reception-group";
+        const heading = document.createElement("div");
+        heading.className = "reception-group-heading";
+        const title = document.createElement("h5");
+        title.textContent = roomName;
+        const ownIds = roomReceptions
+          .filter((item) => String(item.created_by) === String(currentUser?.id))
+          .map((item) => item.id);
+        if (ownIds.length) {
+          const deleteButton = document.createElement("button");
+          deleteButton.type = "button";
+          deleteButton.className = "button reception-delete-button";
+          deleteButton.dataset.receptionIds = ownIds.join(",");
+          deleteButton.dataset.roomName = roomName;
+          deleteButton.textContent = "結果を削除";
+          heading.append(title, deleteButton);
+        } else {
+          heading.appendChild(title);
+        }
+        const list = document.createElement("div");
+        list.className = "reception-result-list";
+        roomReceptions
+          .sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date)))
+          .forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "reception-result-row";
+            const date = document.createElement("span");
+            date.textContent = formatSelectedDate(item.reception_date);
+            const count = document.createElement("strong");
+            count.textContent = `${votes.filter((vote) => String(vote.reception_id) === String(item.id)).length}人`;
+            row.append(date, count);
+            list.appendChild(row);
+          });
+        group.append(heading, list);
+        requestSummaryList.appendChild(group);
+      });
+    }
 
-          timeCell.dataset.label = "日";
-          roomCell.dataset.label = "部屋";
-          countCell.dataset.label = "人数";
-
-          timeCell.textContent = formatSelectedDate(item.reception_date);
-          roomCell.textContent = item.room_name;
-          countCell.textContent = `${votes.filter((vote) => String(vote.reception_id) === String(item.id)).length}人`;
-
-          row.append(timeCell, roomCell, countCell);
-          requestSummaryList.appendChild(row);
-        });
+    function groupReceptionsByRoom(receptions) {
+      const groups = new Map();
+      receptions.forEach((reception) => {
+        const key = String(reception.room_option_id || reception.room_name || "");
+        const group = groups.get(key) || { roomName: reception.room_name || "部屋", receptions: [] };
+        group.receptions.push(reception);
+        groups.set(key, group);
+      });
+      return Array.from(groups.values()).sort((a, b) => a.roomName.localeCompare(b.roomName, "ja"));
     }
 
     function renderStudentReceptions(receptions, votes) {
@@ -3006,27 +3016,32 @@
       const votedIds = new Set(votes.filter((vote) => String(vote.student_id) === String(currentUser.id)).map((vote) => String(vote.reception_id)));
       const visible = receptions.filter((reception) => !votedIds.has(String(reception.id)));
       if (!visible.length) {
-        studentReceptionList.innerHTML = '<tr><td colspan="3">いません</td></tr>';
+        studentReceptionList.innerHTML = '<p class="empty-rooms">いません</p>';
         return;
       }
-      visible.sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date))).forEach((reception) => {
-        const row = document.createElement("tr");
-        const dateCell = document.createElement("td");
-        const roomCell = document.createElement("td");
-        const voteCell = document.createElement("td");
-        dateCell.dataset.label = "日";
-        roomCell.dataset.label = "部屋";
-        voteCell.dataset.label = "投票";
-        dateCell.textContent = formatSelectedDate(reception.reception_date);
-        roomCell.textContent = reception.room_name;
-        const voteButton = document.createElement("button");
-        voteButton.type = "button";
-        voteButton.className = "button primary reception-vote-button";
-        voteButton.dataset.receptionId = reception.id;
-        voteButton.textContent = "投票する";
-        voteCell.appendChild(voteButton);
-        row.append(dateCell, roomCell, voteCell);
-        studentReceptionList.appendChild(row);
+      groupReceptionsByRoom(visible).forEach(({ roomName, receptions: roomReceptions }) => {
+        const group = document.createElement("section");
+        group.className = "reception-group";
+        const title = document.createElement("h5");
+        title.className = "reception-group-title";
+        title.textContent = roomName;
+        const list = document.createElement("div");
+        list.className = "reception-result-list";
+        roomReceptions.sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date))).forEach((reception) => {
+          const row = document.createElement("div");
+          row.className = "reception-result-row";
+          const date = document.createElement("span");
+          date.textContent = formatSelectedDate(reception.reception_date);
+          const voteButton = document.createElement("button");
+          voteButton.type = "button";
+          voteButton.className = "button primary reception-vote-button";
+          voteButton.dataset.receptionId = reception.id;
+          voteButton.textContent = "投票する";
+          row.append(date, voteButton);
+          list.appendChild(row);
+        });
+        group.append(title, list);
+        studentReceptionList.appendChild(group);
       });
     }
 
@@ -3555,6 +3570,28 @@
       setRequestMessage("受付を終了しました。", "success");
     }
 
+    async function handleReceptionGroupDelete(event) {
+      const button = event.target.closest(".reception-delete-button");
+      if (!button) return;
+      const ids = String(button.dataset.receptionIds || "").split(",").filter(Boolean).map(Number);
+      const roomName = button.dataset.roomName || "この部屋";
+      if (!ids.length || !window.confirm(`${roomName} の結果を削除しますか？投票結果も削除されます。`)) return;
+      button.disabled = true;
+      if (String(currentUser.id).startsWith("local-")) {
+        saveLocalReceptions(getLocalReceptions().filter((item) => !ids.includes(Number(item.id))));
+        saveLocalReceptionVotes(getLocalReceptionVotes().filter((vote) => !ids.includes(Number(vote.reception_id))));
+      } else {
+        const { error } = await appClient.from("study_receptions").delete().in("id", ids).eq("created_by", currentUser.id);
+        if (error) {
+          button.disabled = false;
+          setRequestMessage("結果を削除できませんでした。", "error");
+          return;
+        }
+      }
+      await loadRequests();
+      setRequestMessage(`${roomName} の結果を削除しました。`, "success");
+    }
+
     async function handleReceptionVote(event) {
       const button = event.target.closest(".reception-vote-button");
       if (!button || !currentUser) return;
@@ -3777,6 +3814,7 @@
     requestForm.addEventListener("submit", handleRequestSubmit);
     requestNext.addEventListener("click", handleRequestNext);
     requestFinish.addEventListener("click", handleReceptionFinish);
+    requestSummaryList.addEventListener("click", handleReceptionGroupDelete);
     if (studentReceptionList) {
       studentReceptionList.addEventListener("click", handleReceptionVote);
     }

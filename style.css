@@ -302,6 +302,28 @@ p {
   color: #dbe7f2;
 }
 
+.sample-dashboard {
+  display: grid;
+  gap: 16px;
+}
+
+.sample-role-summary {
+  margin-bottom: 0;
+}
+
+.sample-dashboard .room-list-panel {
+  min-height: 0;
+}
+
+.sample-dashboard .room-location-description,
+.sample-dashboard .room-friends-detail {
+  display: block;
+}
+
+.sample-dashboard button {
+  cursor: default;
+}
+
 .app-intro {
   color: var(--muted);
 }
@@ -799,6 +821,57 @@ p {
   border: 0;
   cursor: pointer;
   font: inherit;
+}
+
+.reception-group-list {
+  display: grid;
+  gap: 14px;
+}
+
+.reception-group {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fbfdff;
+}
+
+.reception-group-heading,
+.reception-group-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 11px 12px;
+  color: #173b78;
+  background: #edf4ff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.reception-delete-button {
+  border: 1px solid #e4aaaa;
+  color: #a02929;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.reception-result-list {
+  display: grid;
+}
+
+.reception-result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-height: 46px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .study-start-form {

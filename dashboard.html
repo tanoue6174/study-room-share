@@ -2536,7 +2536,7 @@
       return minutes ? `${hours}時間${minutes}分` : `${hours}時間`;
     }
 
-    function getWeekStartDate() {
+    function getStudyWeekResetDate() {
       const now = new Date();
       const day = now.getDay();
       const diff = day === 0 ? 6 : day - 1;
@@ -2572,7 +2572,7 @@
     }
 
     function getWeeklyStudyMinutesByUser(sessions, userIds) {
-      const weekStart = getWeekStartDate();
+      const weekStart = getStudyWeekResetDate();
       const idSet = new Set(userIds.map((id) => String(id)));
       const totals = new Map();
       sessions.forEach((session) => {
@@ -2589,6 +2589,44 @@
         totals.set(userId, (totals.get(userId) || 0) + calculateStudySessionMinutes(session));
       });
       return totals;
+    }
+
+    async function cleanupOldStudySessions() {
+      const resetDate = getStudyWeekResetDate().toISOString();
+      const localSessions = getLocalStudySessions();
+      if (localSessions.length) {
+        const reset = new Date(resetDate);
+        saveLocalStudySessions(localSessions.filter((session) => {
+          if (session.active !== false) {
+            return true;
+          }
+
+          const endedAt = getStudySessionEndDate(session);
+          const startedAt = new Date(session?.started_at || "");
+          if (endedAt) {
+            return endedAt >= reset;
+          }
+
+          return Number.isNaN(startedAt.getTime()) || startedAt >= reset;
+        }));
+      }
+
+      if (!currentUser || String(currentUser.id).startsWith("local-")) {
+        return;
+      }
+
+      await appClient
+        .from("study_sessions")
+        .delete()
+        .eq("active", false)
+        .lt("ended_at", resetDate);
+
+      await appClient
+        .from("study_sessions")
+        .delete()
+        .eq("active", false)
+        .is("ended_at", null)
+        .lt("started_at", resetDate);
     }
 
     function renderStudyStatus(session) {
@@ -2632,6 +2670,8 @@
         return null;
       }
 
+      await cleanupOldStudySessions();
+
       if (String(currentUser.id).startsWith("local-")) {
         const session = getLocalStudySessions()
           .filter((item) => item.user_id === currentUser.id && item.active !== false)
@@ -2663,6 +2703,8 @@
         renderFriendList([]);
         return [];
       }
+
+      await cleanupOldStudySessions();
 
       const localFriends = getLocalFriends().filter((friend) => (
         friend.user_id === currentUser.id || String(friend.friend_id || friend.id) === String(currentUser.id)
@@ -2762,7 +2804,7 @@
           .from("study_sessions")
           .select("id, user_id, active, started_at, ended_at")
           .in("user_id", friendIds)
-          .gte("started_at", getWeekStartDate().toISOString());
+          .gte("started_at", getStudyWeekResetDate().toISOString());
         if (!weeklyError) {
           const weeklyMinutesByUser = getWeeklyStudyMinutesByUser(weeklySessions || [], friendIds);
           remoteFriends = remoteFriends.map((friend) => ({
@@ -3768,9 +3810,29 @@
       const receptionIds = String(button.dataset.receptionIds || "").split(",").filter(Boolean);
       if (!receptionIds.length) return;
       button.disabled = true;
+      const newVotes = receptionIds
+        .filter((receptionId) => !currentReceptionVotes.some((vote) => (
+          String(vote.reception_id) === String(receptionId)
+          && String(vote.student_id) === String(currentUser.id)
+        )))
+        .map((receptionId, index) => ({
+          id: `pending-${Date.now()}-${index}`,
+          reception_id: receptionId,
+          student_id: currentUser.id,
+          created_at: new Date().toISOString()
+        }));
+
+      currentReceptionVotes = [...currentReceptionVotes, ...newVotes];
+      renderStudentReceptions(currentReceptions, currentReceptionVotes);
+      if (!newVotes.length) {
+        await loadRequests();
+        studentReceptionMessage.textContent = "投票しました。";
+        return;
+      }
       if (String(currentUser.id).startsWith("local-")) {
         const votes = getLocalReceptionVotes();
-        receptionIds.forEach((receptionId, index) => {
+        newVotes.forEach((vote, index) => {
+          const receptionId = vote.reception_id;
           votes.push({ id: Date.now() + index, reception_id: Number(receptionId), student_id: currentUser.id, created_at: new Date().toISOString() });
         });
         saveLocalReceptionVotes(votes);
@@ -3779,11 +3841,11 @@
         return;
       }
       const { error } = await appClient.from("study_reception_votes").insert(
-        receptionIds.map((receptionId) => ({ reception_id: receptionId, student_id: currentUser.id }))
+        newVotes.map((vote) => ({ reception_id: vote.reception_id, student_id: currentUser.id }))
       );
       if (error) {
-        button.disabled = false;
-        studentReceptionMessage.textContent = "投票できませんでした。";
+        await loadRequests();
+        studentReceptionMessage.textContent = "投票結果を確認できませんでした。";
         return;
       }
       await loadRequests();
@@ -3884,10 +3946,11 @@
       setStudyStartMessage("", "");
 
       if (String(currentUser.id).startsWith("local-")) {
+        const endedAt = new Date().toISOString();
         const sessions = getLocalStudySessions().map((session) => (
           String(session.id) === String(currentStudySession.id)
             || (String(session.user_id) === String(currentUser.id) && session.active !== false)
-            ? { ...session, active: false }
+            ? { ...session, active: false, ended_at: endedAt }
             : session
         ));
         saveLocalStudySessions(sessions);
@@ -3901,7 +3964,7 @@
 
       const updateQuery = appClient
         .from("study_sessions")
-        .update({ active: false });
+        .update({ active: false, ended_at: new Date().toISOString() });
       if (currentStudySession.id) {
         updateQuery.eq("id", currentStudySession.id);
       } else {

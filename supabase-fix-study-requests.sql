@@ -56,10 +56,16 @@ create policy "Logged in users can read study requests"
 on public.study_requests
 for select
 to authenticated
-using (true);
+using (created_by = auth.uid());
 
 create policy "Logged in users can create study requests"
 on public.study_requests
 for insert
 to authenticated
-with check (created_by = auth.uid());
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'student'
+  )
+);

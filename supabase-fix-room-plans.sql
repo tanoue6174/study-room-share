@@ -19,7 +19,21 @@ create policy "Logged in users can read room plans"
 on public.study_room_plans
 for select
 to authenticated
-using (true);
+using (
+  user_id = auth.uid()
+  or exists (
+    select 1
+    from public.student_friends
+    where (
+      student_friends.user_id = auth.uid()
+      and student_friends.friend_id = study_room_plans.user_id
+    )
+    or (
+      student_friends.friend_id = auth.uid()
+      and student_friends.user_id = study_room_plans.user_id
+    )
+  )
+);
 
 create policy "Students can create own room plans"
 on public.study_room_plans
@@ -42,6 +56,22 @@ to authenticated
 using (user_id = auth.uid());
 
 grant select, insert, delete on public.study_room_plans to authenticated;
+
+create or replace function public.get_study_room_plan_counts()
+returns table (room_id bigint, planned_count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select plans.room_id, count(*)::bigint
+  from public.study_room_plans plans
+  where auth.uid() is not null
+  group by plans.room_id;
+$$;
+
+revoke all on function public.get_study_room_plan_counts() from public;
+grant execute on function public.get_study_room_plan_counts() to authenticated;
 
 do $$
 begin

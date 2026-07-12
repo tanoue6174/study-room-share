@@ -8,13 +8,13 @@
 </head>
 <body class="dashboard-page">
   <header class="site-header" hidden>
-    <nav class="nav" aria-label="繝｡繧､繝ｳ繝翫ン繧ｲ繝ｼ繧ｷ繝ｧ繝ｳ">
+    <nav class="nav" aria-label="メインナビゲーション">
       <a class="brand" href="index.html">Study Room Share</a>
       <div class="nav-links">
-        <a href="index.html">繝医ャ繝・/a>
-        <a href="features.html">讖溯・</a>
-        <a href="use-cases.html">豢ｻ逕ｨ萓・/a>
-        <a class="active" href="dashboard.html">邂｡逅・/a>
+        <a href="index.html">トップ</a>
+        <a href="features.html">機能</a>
+        <a href="use-cases.html">使い方</a>
+        <a class="active" href="dashboard.html">管理</a>
       </div>
     </nav>
   </header>
@@ -29,8 +29,8 @@
           逕溷ｾ偵・逋ｻ骭ｲ縺輔ｌ縺溯・鄙貞ｮ､繧偵Μ繧ｹ繝医〒遒ｺ隱阪＠縲∬・蛻・↓蜷医▲縺溷ｴ謇繧帝∈縺ｹ縺ｾ縺吶・
         </p>
         <div class="actions">
-          <a class="button primary" href="#app-section">繝ｭ繧ｰ繧､繝ｳ縺励※菴ｿ縺・/a>
-          <a class="button secondary" href="features.html">讖溯・繧定ｦ九ｋ</a>
+          <a class="button primary" href="#app-section">ログインして使う</a>
+          <a class="button secondary" href="features.html">機能を見る</a>
         </div>
       </div>
     </section>
@@ -49,7 +49,7 @@
           </p>
         </article>
         <article class="panel">
-          <h3>逕溷ｾ貞髄縺・/h3>
+          <h3>生徒向け</h3>
           <p>
             繝ｭ繧ｰ繧､繝ｳ縺吶ｋ縺ｨ縲∝・逕溘′逋ｻ骭ｲ縺励◆閾ｪ鄙貞ｮ､繧剃ｸ隕ｧ縺ｧ遒ｺ隱阪〒縺阪∪縺吶・
             蝣ｴ謇縲∵凾髢薙∽ｺｺ謨ｰ縺ｮ逶ｮ螳峨ｒ隕九※縲∬・鄙貞ｴ謇繧帝∈縺ｹ縺ｾ縺吶・
@@ -61,20 +61,20 @@
     <section class="section app-section" id="app-section" aria-labelledby="app-title">
       <div class="section-heading">
         <p class="eyebrow">App</p>
-        <h2 id="app-title">閾ｪ鄙貞ｮ､邂｡逅・/h2>
+        <h2 id="app-title">自習室管理</h2>
       </div>
 
       <div class="auth-panel" id="auth-panel">
         <div>
           <h3>繝ｭ繧ｰ繧､繝ｳ</h3>
-          <p class="auth-status" id="auth-status" role="status" aria-live="polite">繝ｭ繧ｰ繧､繝ｳ迥ｶ諷九ｒ遒ｺ隱阪＠縺ｦ縺・∪縺吶・/p>
+          <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
         </div>
         <form class="auth-form" id="auth-form" autocomplete="off">
           <label for="display-name">蜷榊燕</label>
           <input id="display-name" name="school-display-name-no-autofill" type="text" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="学校内で使う名前" required>
 
           <select id="account-role" name="account-role" hidden aria-hidden="true">
-            <option value="student">逕溷ｾ・/option>
+            <option value="student">生徒</option>
           </select>
           <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" hidden aria-hidden="true">
 
@@ -89,7 +89,7 @@
             <button class="button auth-button-strong" id="signin-button" type="submit">繝ｭ繧ｰ繧､繝ｳ</button>
             <span class="school-banner" id="school-banner" hidden>縺ゅｋ蟄ｦ譬｡</span>
             <span class="user-name-label" id="user-name-label" hidden></span>
-            <button class="button auth-button-muted" id="signout-button" type="button" hidden>繝ｭ繧ｰ繧｢繧ｦ繝・/button>
+            <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
@@ -98,9 +98,9 @@
       <div class="role-summary" id="role-summary" hidden>
         <div>
           <p class="eyebrow">Dashboard</p>
-          <h3 id="dashboard-title">閾ｪ鄙貞ｮ､繝ｪ繧ｹ繝・/h3>
+          <h3 id="dashboard-title">自習室リスト</h3>
         </div>
-        <p id="dashboard-note">蜈育函縺檎匳骭ｲ縺励◆閾ｪ鄙貞ｮ､繧堤｢ｺ隱阪〒縺阪∪縺吶・/p>
+        <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
       </div>
 
       <div class="room-layout">
@@ -150,7 +150,7 @@
             <button class="button auth-button-muted" id="refresh-rooms" type="button">譖ｴ譁ｰ</button>
           </div>
           <div class="room-list" id="room-list" aria-live="polite">
-            <p class="empty-rooms">繝ｭ繧ｰ繧､繝ｳ縺吶ｋ縺ｨ閾ｪ鄙貞ｮ､繝ｪ繧ｹ繝医ｒ遒ｺ隱阪〒縺阪∪縺吶・/p>
+            <p class="empty-rooms">ログインすると自習室リストを確認できます。</p>
           </div>
         </div>
       </div>
@@ -320,6 +320,7 @@
       const authUrl = `${url}/auth/v1`;
       const restUrl = `${url}/rest/v1`;
       const listeners = [];
+      let refreshPromise = null;
 
       function getStoredSession() {
         try {
@@ -335,7 +336,8 @@
         } else {
           localStorage.removeItem(storageKey);
         }
-        listeners.forEach((listener) => listener("SIGNED_IN", session));
+        const event = session ? "SIGNED_IN" : "SIGNED_OUT";
+        listeners.forEach((listener) => listener(event, session));
       }
 
       function authHeaders(useSession) {
@@ -348,32 +350,44 @@
       }
 
       async function refreshStoredSession() {
-        const session = getStoredSession();
-        if (!session?.refresh_token) {
-          return null;
+        if (refreshPromise) {
+          return refreshPromise;
         }
 
-        const response = await fetch(`${authUrl}/token?grant_type=refresh_token`, {
-          method: "POST",
-          headers: {
-            apikey: key,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ refresh_token: session.refresh_token })
-        });
-        const text = await response.text();
-        const payload = text ? JSON.parse(text) : null;
+        refreshPromise = (async () => {
+          const session = getStoredSession();
+          if (!session?.refresh_token) {
+            return null;
+          }
 
-        if (!response.ok) {
-          saveSession(null);
-          return null;
-        }
+          const response = await fetch(`${authUrl}/token?grant_type=refresh_token`, {
+            method: "POST",
+            headers: {
+              apikey: key,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ refresh_token: session.refresh_token })
+          });
+          const text = await response.text();
+          const payload = text ? JSON.parse(text) : null;
 
-        const refreshedSession = buildSession(payload);
-        if (refreshedSession) {
-          saveSession(refreshedSession);
+          if (!response.ok) {
+            saveSession(null);
+            return null;
+          }
+
+          const refreshedSession = buildSession(payload);
+          if (refreshedSession) {
+            saveSession(refreshedSession);
+          }
+          return refreshedSession;
+        })();
+
+        try {
+          return await refreshPromise;
+        } finally {
+          refreshPromise = null;
         }
-        return refreshedSession;
       }
 
       async function request(endpoint, options) {
@@ -605,8 +619,17 @@
             return { data, error };
           },
           async signOut() {
+            const session = getStoredSession();
+            let error = null;
+            if (session?.access_token) {
+              const result = await request(`${authUrl}/logout`, {
+                method: "POST",
+                headers: authHeaders(true)
+              });
+              error = result.error;
+            }
             saveSession(null);
-            return { error: null };
+            return { error };
           },
           async getSession() {
             return { data: { session: getStoredSession() } };
@@ -615,7 +638,14 @@
             listeners.push(callback);
           }
         },
-        from: table
+        from: table,
+        rpc(name, values = {}) {
+          return request(`${restUrl}/rpc/${encodeURIComponent(name)}`, {
+            method: "POST",
+            headers: authHeaders(true),
+            body: JSON.stringify(values)
+          });
+        }
       };
     }
 
@@ -700,6 +730,7 @@
     let currentReceptionVotes = [];
     let hiddenVotedReceptionIds = new Set();
     let currentRoomPlans = [];
+    let currentRoomPlanCounts = new Map();
     let currentFriends = [];
     let currentStudySession = null;
     const LOCAL_SESSION_KEY = "study-room-share-local-session";
@@ -1139,6 +1170,9 @@
       }
 
       const roomId = getRoomId(room);
+      if (currentRoomPlanCounts.has(roomId)) {
+        return currentRoomPlanCounts.get(roomId) || 0;
+      }
       return currentRoomPlans.filter((plan) => String(plan.room_id) === roomId).length;
     }
 
@@ -1184,6 +1218,7 @@
 
     async function loadRoomPlans(rooms) {
       currentRoomPlans = [];
+      currentRoomPlanCounts = new Map();
 
       if (!isSupabaseUser()) {
         return;
@@ -1194,16 +1229,29 @@
         return;
       }
 
-      const { data, error } = await appClient
-        .from("study_room_plans")
-        .select("room_id, user_id, created_at");
+      const [plansResult, countsResult] = await Promise.all([
+        appClient.from("study_room_plans").select("room_id, user_id, created_at"),
+        appClient.rpc("get_study_room_plan_counts")
+      ]);
 
-      if (error) {
-        currentRoomPlans = [];
+      if (!plansResult.error) {
+        currentRoomPlans = (plansResult.data || []).filter((plan) => roomIds.has(String(plan.room_id)));
+      }
+
+      if (!countsResult.error) {
+        (countsResult.data || []).forEach((row) => {
+          const roomId = String(row.room_id || "");
+          if (roomIds.has(roomId)) {
+            currentRoomPlanCounts.set(roomId, Number(row.planned_count) || 0);
+          }
+        });
         return;
       }
 
-      currentRoomPlans = (data || []).filter((plan) => roomIds.has(String(plan.room_id)));
+      currentRoomPlans.forEach((plan) => {
+        const roomId = String(plan.room_id || "");
+        currentRoomPlanCounts.set(roomId, (currentRoomPlanCounts.get(roomId) || 0) + 1);
+      });
     }
 
     async function saveRoomPlan(room, shouldPlan) {
@@ -1223,6 +1271,7 @@
       if (!roomId) {
         return { error: { message: "部屋情報が見つかりません。" } };
       }
+      const wasPlanned = isRoomPlannedByCurrentUser(room);
 
       if (shouldPlan) {
         const { error } = await appClient.from("study_room_plans").upsert({
@@ -1233,12 +1282,13 @@
           ignoreDuplicates: true
         });
 
-        if (!error && !isRoomPlannedByCurrentUser(room)) {
+        if (!error && !wasPlanned) {
           currentRoomPlans.push({
             room_id: Number(roomId),
             user_id: currentUser.id,
             created_at: new Date().toISOString()
           });
+          currentRoomPlanCounts.set(roomId, (currentRoomPlanCounts.get(roomId) || 0) + 1);
         }
         return { error };
       }
@@ -1253,6 +1303,9 @@
         currentRoomPlans = currentRoomPlans.filter((plan) => !(
           String(plan.room_id) === roomId && String(plan.user_id) === String(currentUser.id)
         ));
+        if (wasPlanned) {
+          currentRoomPlanCounts.set(roomId, Math.max(0, (currentRoomPlanCounts.get(roomId) || 0) - 1));
+        }
       }
 
       return { error };
@@ -1273,11 +1326,10 @@
         : "終了時刻を過ぎたため変更できません";
     }
 
-    function makeAccountLoginId(password, name) {
-      const role = roleFromPassword(password);
+    function makeAccountLoginIdForRole(role, name) {
       const trimmedName = name.trim();
       if (!trimmedName) {
-        return password;
+        return role;
       }
 
       let hash = 0;
@@ -1285,7 +1337,11 @@
         hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
       });
 
-      return `${role || "user"}-${Math.abs(hash).toString(36)}`;
+      return `${role}-${Math.abs(hash).toString(36)}`;
+    }
+
+    function makeAccountLoginId(password, name) {
+      return makeAccountLoginIdForRole(roleFromPassword(password), name);
     }
 
     function getPasswordAccount(id, name) {
@@ -1322,17 +1378,14 @@
     }
 
     function getPasswordCredential() {
-      return normalizeLoginId(accountPassword.value);
+      return accountPassword.value;
     }
 
     function roleFromPassword(value) {
       if (value === ROLE_PASSWORDS.teacher) {
         return "teacher";
       }
-      if (value === ROLE_PASSWORDS.student) {
-        return "student";
-      }
-      return "";
+      return "student";
     }
 
     function roleFromLoginId(value) {
@@ -1362,7 +1415,7 @@
       return "認証に失敗しました。Supabaseの設定を確認してください。";
     }
 
-    function getAuthInputProblem() {
+    function getAuthInputProblem(forSignup = false) {
       const password = getPasswordCredential();
       const name = displayName.value.trim();
 
@@ -1375,8 +1428,11 @@
       if (!password) {
         return "パスワードを入力してください。";
       }
-      if (!roleFromPassword(password)) {
-        return "パスワードが違います。";
+      if (password.length < 8) {
+        return "パスワードは8文字以上にしてください。";
+      }
+      if (forSignup && Object.values(ROLE_PASSWORDS).includes(password)) {
+        return "共通パスワードは新規登録に使えません。自分だけのパスワードを入力してください。";
       }
       return "";
     }
@@ -2020,28 +2076,19 @@
 
     function isSchoolLogin(profile, user) {
       const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-      const role = profile?.role || user?.user_metadata?.role || "";
+      const role = profile?.role || "";
       return loginId === "study2026" || loginId === "teach2026" || role === "student" || role === "teacher";
     }
 
-    function displayRoleForAccount(profile, user) {
-      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-
-      if (loginId === "study2026") {
-        return "student";
-      }
-
-      if (loginId === "teach2026") {
-        return "teacher";
-      }
-
-      return profile?.role || user?.user_metadata?.role || "student";
+    function displayRoleForAccount(profile) {
+      return profile?.role === "teacher" ? "teacher" : "student";
     }
 
     function renderLoggedOut() {
       currentUser = null;
       currentProfile = null;
       currentRoomPlans = [];
+      currentRoomPlanCounts = new Map();
       currentFriends = [];
       hiddenVotedReceptionIds = new Set();
       authStatus.textContent = "ログインしていません。";
@@ -2490,7 +2537,7 @@
           item.classList.add("is-studying");
         }
         const studyText = friend.study_status || "勉強状況";
-        const commentText = friend.comment || "コメント";
+        const commentText = friend.comment || "";
 
         const nameWrap = document.createElement("div");
         nameWrap.className = "friend-name-block";
@@ -2586,6 +2633,36 @@
       return start;
     }
 
+    function getStudySessionAutomaticEndDate(session) {
+      const startedAt = new Date(session?.started_at || "");
+      if (Number.isNaN(startedAt.getTime())) {
+        return null;
+      }
+
+      const timeMatch = String(session?.ends_at || "").match(/^(\d{1,2}):(\d{2})$/);
+      const automaticEnd = new Date(startedAt);
+      if (!timeMatch) {
+        automaticEnd.setHours(23, 59, 59, 999);
+        return automaticEnd;
+      }
+
+      const hours = Number(timeMatch[1]);
+      const minutes = Number(timeMatch[2]);
+      if (hours > 24 || minutes > 59 || (hours === 24 && minutes !== 0)) {
+        return null;
+      }
+      automaticEnd.setHours(hours, minutes, 0, 0);
+      return automaticEnd;
+    }
+
+    function isStudySessionExpired(session, now = new Date()) {
+      if (!session || session.active === false) {
+        return false;
+      }
+      const automaticEnd = getStudySessionAutomaticEndDate(session);
+      return Boolean(automaticEnd && automaticEnd <= now);
+    }
+
     function getStudySessionEndDate(session) {
       if (session?.ended_at) {
         const endedAt = new Date(session.ended_at);
@@ -2595,7 +2672,9 @@
       }
 
       if (session?.active !== false) {
-        return new Date();
+        const now = new Date();
+        const automaticEnd = getStudySessionAutomaticEndDate(session);
+        return automaticEnd && automaticEnd < now ? automaticEnd : now;
       }
 
       return null;
@@ -2636,7 +2715,14 @@
       const localSessions = getLocalStudySessions();
       if (localSessions.length) {
         const reset = new Date(resetDate);
-        saveLocalStudySessions(localSessions.filter((session) => {
+        const normalizedSessions = localSessions.map((session) => {
+          if (!isStudySessionExpired(session)) {
+            return session;
+          }
+          const automaticEnd = getStudySessionAutomaticEndDate(session) || new Date();
+          return { ...session, active: false, ended_at: automaticEnd.toISOString() };
+        });
+        saveLocalStudySessions(normalizedSessions.filter((session) => {
           if (session.active !== false) {
             return true;
           }
@@ -2708,50 +2794,6 @@
       studyStatus.appendChild(item);
     }
 
-    function isTanouePresentationAccount() {
-      const displayName = normalizeFriendSearchText(currentProfile?.display_name || "");
-      const loginIdValue = normalizeFriendSearchText(currentProfile?.login_id || currentUser?.user_metadata?.login_id || "");
-      return displayName === "tanoue"
-        || ["tanoue", "student-ekj8xu"].includes(loginIdValue);
-    }
-
-    async function ensureTanouePresentationFriends(existingFriendIds = new Set()) {
-      if (!currentUser || !isTanouePresentationAccount() || displayRoleForAccount(currentProfile, currentUser) !== "student") {
-        return false;
-      }
-
-      const targetNames = new Set(["Aさん", "A", "Bさん", "B", "Cさん", "C", "Dさん", "D", "Eさん", "E"]);
-      const { data: profiles, error } = await appClient
-        .from("profiles")
-        .select("id, login_id, display_name, role")
-        .eq("role", "student");
-      if (error) {
-        return false;
-      }
-
-      const targets = (profiles || []).filter((profile) => (
-        String(profile.id) !== String(currentUser.id)
-        && (
-          targetNames.has(profile.display_name || "")
-          || targetNames.has(profile.login_id || "")
-        )
-        && !existingFriendIds.has(String(profile.id))
-      ));
-      if (!targets.length) {
-        return false;
-      }
-
-      const { error: upsertError } = await appClient.from("student_friends").upsert(
-        targets.map((profile) => ({
-          user_id: currentUser.id,
-          friend_id: profile.id,
-          friend_name: profile.display_name || profile.login_id || "名前なし"
-        })),
-        { onConflict: "user_id,friend_id" }
-      );
-      return !upsertError;
-    }
-
     async function loadStudySession() {
       if (!currentUser || !studyStatus) {
         renderStudyStatus(null);
@@ -2780,12 +2822,30 @@
         return null;
       }
 
-      const session = (data || [])[0] || null;
+      const sessions = data || [];
+      const expiredSessions = sessions.filter((session) => isStudySessionExpired(session));
+      await Promise.all(expiredSessions.map(async (session) => {
+        const automaticEnd = getStudySessionAutomaticEndDate(session) || new Date();
+        await appClient
+          .from("study_sessions")
+          .update({ active: false, ended_at: automaticEnd.toISOString() })
+          .eq("id", session.id)
+          .eq("user_id", currentUser.id);
+        if (session.room_id) {
+          await appClient
+            .from("study_room_plans")
+            .delete()
+            .eq("room_id", session.room_id)
+            .eq("user_id", currentUser.id);
+        }
+      }));
+
+      const session = sessions.find((item) => !isStudySessionExpired(item)) || null;
       renderStudyStatus(session);
       return session;
     }
 
-    async function loadFriends(shouldEnsurePresentationFriends = true) {
+    async function loadFriends() {
       if (!currentUser || !friendList) {
         currentFriends = [];
         renderFriendList([]);
@@ -2801,7 +2861,7 @@
       if (String(currentUser.id).startsWith("local-")) {
         const accounts = Object.values(getLocalAccounts());
         const activeSessions = getLocalStudySessions()
-          .filter((session) => session.active !== false)
+          .filter((session) => session.active !== false && !isStudySessionExpired(session))
           .sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)));
         const localFriendIds = localFriends.map((friend) => (
           friend.user_id === currentUser.id ? friend.friend_id : friend.user_id
@@ -2864,10 +2924,6 @@
       remoteFriends = Array.from(uniqueFriends.values());
 
       const friendIds = remoteFriends.map((friend) => friend.id).filter(Boolean);
-      if (shouldEnsurePresentationFriends && await ensureTanouePresentationFriends(new Set(friendIds.map((id) => String(id))))) {
-        return loadFriends(false);
-      }
-
       if (friendIds.length) {
         const { data: friendProfiles, error: profileError } = await appClient
           .from("profiles")
@@ -2894,7 +2950,7 @@
           .order("started_at", { ascending: false });
         if (!sessionError) {
           const sessionByUserId = new Map();
-          (friendSessions || []).forEach((session) => {
+          (friendSessions || []).filter((session) => !isStudySessionExpired(session)).forEach((session) => {
             const userId = String(session.user_id);
             if (!sessionByUserId.has(userId)) {
               sessionByUserId.set(userId, session);
@@ -3175,23 +3231,24 @@
     }
 
     async function fetchProfile(user) {
-      const { data, error } = await appClient
+      let { data, error } = await appClient
         .from("profiles")
         .select("id, login_id, display_name, role, self_comment")
         .eq("id", user.id)
         .single();
 
+      const profileErrorMessage = String(error?.message || "");
+      if (error && (profileErrorMessage.includes("self_comment") || profileErrorMessage.includes("schema cache"))) {
+        const fallbackResult = await appClient
+          .from("profiles")
+          .select("id, login_id, display_name, role")
+          .eq("id", user.id)
+          .single();
+        data = fallbackResult.data ? { ...fallbackResult.data, self_comment: "" } : null;
+        error = fallbackResult.error;
+      }
+
       if (!error && data) {
-        const loginId = data.login_id || user.user_metadata?.login_id || user.email?.split("@")[0] || "";
-        const expectedRole = roleFromLoginId(loginId);
-        if (expectedRole && data.role !== expectedRole) {
-          const correctedProfile = { ...data, role: expectedRole };
-          const { error: updateError } = await appClient.from("profiles").upsert(correctedProfile);
-          if (updateError && isConnectionError(updateError)) {
-            throw updateError;
-          }
-          return correctedProfile;
-        }
         return data;
       }
 
@@ -3203,7 +3260,7 @@
         id: user.id,
         login_id: user.user_metadata?.login_id || user.email?.split("@")[0],
         display_name: user.user_metadata?.display_name || user.user_metadata?.login_id || user.email,
-        role: user.user_metadata?.role || "student",
+        role: "student",
         self_comment: ""
       };
 
@@ -3245,6 +3302,7 @@
       if (String(currentUser.id).startsWith("local-")) {
         await cleanupExpiredRooms();
         currentRoomPlans = [];
+        currentRoomPlanCounts = new Map();
         renderRooms(filterVisibleRooms(getLocalRooms()));
         return;
       }
@@ -3258,7 +3316,7 @@
         .order("start_time", { ascending: true });
 
       if (error) {
-        roomList.innerHTML = '<p class="empty-rooms">閾ｪ鄙貞ｮ､繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲４upabase縺ｮ繝・・繝悶Ν險ｭ螳壹ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・/p>';
+        roomList.innerHTML = '<p class="empty-rooms">自習室を読み込めませんでした。Supabaseの設定を確認してください。</p>';
         return;
       }
 
@@ -3387,9 +3445,12 @@
         renderStudentReceptions([], []);
         return;
       }
+      const today = formatDateForInput(new Date());
 
       if (String(currentUser.id).startsWith("local-")) {
-        currentReceptions = getLocalReceptions().filter((item) => item.active !== false);
+        currentReceptions = getLocalReceptions().filter((item) => (
+          item.active !== false && String(item.reception_date || "") >= today
+        ));
         currentReceptionVotes = getLocalReceptionVotes();
         renderRequestSummary(currentReceptions, currentReceptionVotes);
         renderStudentReceptions(currentReceptions, currentReceptionVotes);
@@ -3397,7 +3458,7 @@
       }
 
       const [{ data: receptions, error: receptionError }, { data: votes, error: voteError }] = await Promise.all([
-        appClient.from("study_receptions").select("id, room_option_id, room_name, reception_date, created_by, active, created_at").eq("active", true).order("reception_date", { ascending: true }),
+        appClient.from("study_receptions").select("id, room_option_id, room_name, reception_date, created_by, active, created_at").eq("active", true).gte("reception_date", today).order("reception_date", { ascending: true }),
         appClient.from("study_reception_votes").select("id, reception_id, student_id, created_at")
       ]);
       if (receptionError || voteError) {
@@ -3414,7 +3475,7 @@
     }
 
     async function handleSignUp() {
-      const inputProblem = getAuthInputProblem();
+      const inputProblem = getAuthInputProblem(true);
       if (inputProblem) {
         setAuthMessage(`登録できません。${inputProblem}`, "error");
         authForm.reportValidity();
@@ -3428,9 +3489,10 @@
 
       const id = getPasswordCredential();
       const password = id;
-      const role = roleFromPassword(id);
+      const role = "student";
       const name = displayName.value.trim();
-      const email = loginIdToEmail(makeAccountLoginId(id, name));
+      const accountLoginId = makeAccountLoginIdForRole(role, name);
+      const email = loginIdToEmail(accountLoginId);
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -3441,7 +3503,7 @@
           password,
           options: {
             data: {
-              login_id: makeAccountLoginId(id, name),
+              login_id: accountLoginId,
               display_name: name,
               role
             }
@@ -3457,7 +3519,7 @@
 
         if (data.session) {
           await ensureProfile(data.session.user, {
-            login_id: makeAccountLoginId(id, name),
+            login_id: accountLoginId,
             display_name: name,
             role
           });
@@ -3473,8 +3535,6 @@
 
     async function handleSignIn() {
       clearLocalSession();
-      await appClient.auth.signOut();
-      renderLoggedOut();
 
       const inputProblem = getAuthInputProblem();
       if (inputProblem) {
@@ -3488,6 +3548,9 @@
         return;
       }
 
+      await appClient.auth.signOut();
+      renderLoggedOut();
+
       const id = getPasswordCredential();
       const name = displayName.value.trim();
       const password = id;
@@ -3496,10 +3559,23 @@
       setAuthMessage("", "");
 
       try {
-        const { error } = await appClient.auth.signInWithPassword({
-          email: loginIdToEmail(makeAccountLoginId(id, name)),
-          password
-        });
+        const candidateRoles = password === ROLE_PASSWORDS.teacher
+          ? ["teacher", "student"]
+          : ["student", "teacher"];
+        let error = null;
+        for (const role of candidateRoles) {
+          const result = await appClient.auth.signInWithPassword({
+            email: loginIdToEmail(makeAccountLoginIdForRole(role, name)),
+            password
+          });
+          error = result.error;
+          if (!error) {
+            break;
+          }
+          if (!String(error.message || "").toLowerCase().includes("invalid login credentials")) {
+            break;
+          }
+        }
 
         setAuthLoading(false);
 
@@ -3848,6 +3924,11 @@
         return;
       }
 
+      if (requestSubmit.disabled) {
+        return;
+      }
+      requestSubmit.disabled = true;
+      try {
       const receptionPayload = {
         room_option_id: requestRoom.value,
         room_name: requestRoom.options[requestRoom.selectedIndex].textContent,
@@ -3880,6 +3961,9 @@
       await loadRequests();
       resetReceptionForm();
       setRequestMessage("受付を追加しました。", "success");
+      } finally {
+        updateReceptionStep();
+      }
     }
 
     function handleRequestNext() {
@@ -3995,6 +4079,11 @@
         return;
       }
 
+      if (studyStartSubmit.disabled) {
+        return;
+      }
+      studyStartSubmit.disabled = true;
+      try {
       const payload = {
         user_id: currentUser.id,
         room_id: isUnspecifiedRoom ? null : Number(studyStartRoom.value),
@@ -4008,8 +4097,11 @@
       setStudyStartMessage("", "");
 
       if (String(currentUser.id).startsWith("local-")) {
+        const endedAt = new Date().toISOString();
         const sessions = getLocalStudySessions().map((studySession) => (
-          studySession.user_id === currentUser.id ? { ...studySession, active: false } : studySession
+          studySession.user_id === currentUser.id && studySession.active !== false
+            ? { ...studySession, active: false, ended_at: endedAt }
+            : studySession
         ));
         sessions.push({ ...payload, id: Date.now() });
         saveLocalStudySessions(sessions);
@@ -4024,7 +4116,7 @@
 
       await appClient
         .from("study_sessions")
-        .update({ active: false })
+        .update({ active: false, ended_at: new Date().toISOString() })
         .eq("user_id", currentUser.id)
         .eq("active", true);
 
@@ -4049,6 +4141,9 @@
         return;
       }
       setStudyStartMessage("自習を開始しました。", "success");
+      } finally {
+        studyStartSubmit.disabled = false;
+      }
     }
 
     async function handleStudyEndClick(event) {

@@ -51,20 +51,44 @@ create policy "Teachers can create study rooms"
 on public.study_rooms
 for insert
 to authenticated
-with check (created_by = auth.uid());
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);
 
 create policy "Teachers can update own study rooms"
 on public.study_rooms
 for update
 to authenticated
-using (created_by = auth.uid())
-with check (created_by = auth.uid());
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+)
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);
 
 create policy "Teachers can delete own study rooms"
 on public.study_rooms
 for delete
 to authenticated
-using (created_by = auth.uid());
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);
 
 create policy "Logged in users can read room options"
 on public.study_room_options
@@ -76,17 +100,41 @@ create policy "Teachers can create room options"
 on public.study_room_options
 for insert
 to authenticated
-with check (created_by = auth.uid());
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);
 
 create policy "Teachers can update own room options"
 on public.study_room_options
 for update
 to authenticated
-using (created_by = auth.uid())
-with check (created_by = auth.uid());
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+)
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);
 
 create policy "Teachers can delete own room options"
 on public.study_room_options
 for delete
 to authenticated
-using (created_by = auth.uid());
+using (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'teacher'
+  )
+);

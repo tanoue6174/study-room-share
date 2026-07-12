@@ -8,12 +8,12 @@
 </head>
 <body>
   <header class="site-header">
-    <nav class="nav" aria-label="繝｡繧､繝ｳ繝翫ン繧ｲ繝ｼ繧ｷ繝ｧ繝ｳ">
+    <nav class="nav" aria-label="メインナビゲーション">
       <a class="brand" href="index.html">Study Room Share</a>
       <div class="nav-links">
-        <a class="active" href="index.html">繝医ャ繝・/a>
-        <a href="features.html">讖溯・</a>
-        <a href="use-cases.html">豢ｻ逕ｨ萓・/a>
+        <a class="active" href="index.html">トップ</a>
+        <a href="features.html">機能</a>
+        <a href="use-cases.html">使い方</a>
       </div>
     </nav>
   </header>
@@ -28,8 +28,8 @@
           逕溷ｾ偵・逋ｻ骭ｲ縺輔ｌ縺溯・鄙貞ｮ､繧偵Μ繧ｹ繝医〒遒ｺ隱阪＠縲∬・蛻・↓蜷医▲縺溷ｴ謇繧帝∈縺ｹ縺ｾ縺吶・
         </p>
         <div class="actions">
-          <a class="button primary" href="#app-section">繝ｭ繧ｰ繧､繝ｳ縺励※菴ｿ縺・/a>
-          <a class="button secondary" href="features.html">讖溯・繧定ｦ九ｋ</a>
+          <a class="button primary" href="#app-section">ログインして使う</a>
+          <a class="button secondary" href="features.html">機能を見る</a>
         </div>
       </div>
     </section>
@@ -48,7 +48,7 @@
           </p>
         </article>
         <article class="panel">
-          <h3>逕溷ｾ貞髄縺・/h3>
+          <h3>生徒向け</h3>
           <p>
             繝ｭ繧ｰ繧､繝ｳ縺吶ｋ縺ｨ縲∝・逕溘′逋ｻ骭ｲ縺励◆閾ｪ鄙貞ｮ､繧剃ｸ隕ｧ縺ｧ遒ｺ隱阪〒縺阪∪縺吶・
             蝣ｴ謇縲∵凾髢薙∽ｺｺ謨ｰ縺ｮ逶ｮ螳峨ｒ隕九※縲∬・鄙貞ｴ謇繧帝∈縺ｹ縺ｾ縺吶・
@@ -60,20 +60,20 @@
     <section class="section app-section" id="app-section" aria-labelledby="app-title">
       <div class="section-heading">
         <p class="eyebrow">App</p>
-        <h2 id="app-title">閾ｪ鄙貞ｮ､邂｡逅・/h2>
+        <h2 id="app-title">自習室管理</h2>
       </div>
 
       <div class="auth-panel" id="auth-panel">
         <div>
           <h3>繝ｭ繧ｰ繧､繝ｳ</h3>
-          <p class="auth-status" id="auth-status" role="status" aria-live="polite">繝ｭ繧ｰ繧､繝ｳ迥ｶ諷九ｒ遒ｺ隱阪＠縺ｦ縺・∪縺吶・/p>
+          <p class="auth-status" id="auth-status" role="status" aria-live="polite">ログイン状態を確認しています。</p>
         </div>
         <form class="auth-form" id="auth-form" autocomplete="off">
           <label for="display-name">蜷榊燕</label>
           <input id="display-name" name="school-display-name-no-autofill" type="text" maxlength="40" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="学校内で使う名前" required>
 
           <select id="account-role" name="account-role" hidden aria-hidden="true">
-            <option value="student">逕溷ｾ・/option>
+            <option value="student">生徒</option>
           </select>
           <input id="login-id" name="login-id" type="text" inputmode="latin" autocomplete="username" minlength="6" maxlength="24" pattern="[A-Za-z0-9_-]+" hidden aria-hidden="true">
 
@@ -88,7 +88,7 @@
             <button class="button auth-button-strong" id="signin-button" type="submit">繝ｭ繧ｰ繧､繝ｳ</button>
             <span class="school-banner" id="school-banner" hidden>縺ゅｋ蟄ｦ譬｡</span>
             <span class="user-name-label" id="user-name-label" hidden></span>
-            <button class="button auth-button-muted" id="signout-button" type="button" hidden>繝ｭ繧ｰ繧｢繧ｦ繝・/button>
+            <button class="button auth-button-muted" id="signout-button" type="button" hidden>ログアウト</button>
           </div>
           <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
         </form>
@@ -98,9 +98,9 @@
         <div class="role-summary" id="role-summary" hidden>
           <div>
             <p class="eyebrow">Dashboard</p>
-            <h3 id="dashboard-title">閾ｪ鄙貞ｮ､繝ｪ繧ｹ繝・/h3>
+            <h3 id="dashboard-title">自習室リスト</h3>
           </div>
-          <p id="dashboard-note">蜈育函縺檎匳骭ｲ縺励◆閾ｪ鄙貞ｮ､繧堤｢ｺ隱阪〒縺阪∪縺吶・/p>
+          <p id="dashboard-note">先生が登録した自習室を確認できます。</p>
         </div>
         <div class="room-layout" hidden>
           <form class="room-form" id="room-form" hidden>
@@ -157,6 +157,7 @@
       const authUrl = `${url}/auth/v1`;
       const restUrl = `${url}/rest/v1`;
       const listeners = [];
+      let refreshPromise = null;
 
       function getStoredSession() {
         try {
@@ -172,7 +173,8 @@
         } else {
           localStorage.removeItem(storageKey);
         }
-        listeners.forEach((listener) => listener("SIGNED_IN", session));
+        const event = session ? "SIGNED_IN" : "SIGNED_OUT";
+        listeners.forEach((listener) => listener(event, session));
       }
 
       function authHeaders(useSession) {
@@ -185,32 +187,44 @@
       }
 
       async function refreshStoredSession() {
-        const session = getStoredSession();
-        if (!session?.refresh_token) {
-          return null;
+        if (refreshPromise) {
+          return refreshPromise;
         }
 
-        const response = await fetch(`${authUrl}/token?grant_type=refresh_token`, {
-          method: "POST",
-          headers: {
-            apikey: key,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ refresh_token: session.refresh_token })
-        });
-        const text = await response.text();
-        const payload = text ? JSON.parse(text) : null;
+        refreshPromise = (async () => {
+          const session = getStoredSession();
+          if (!session?.refresh_token) {
+            return null;
+          }
 
-        if (!response.ok) {
-          saveSession(null);
-          return null;
-        }
+          const response = await fetch(`${authUrl}/token?grant_type=refresh_token`, {
+            method: "POST",
+            headers: {
+              apikey: key,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ refresh_token: session.refresh_token })
+          });
+          const text = await response.text();
+          const payload = text ? JSON.parse(text) : null;
 
-        const refreshedSession = buildSession(payload);
-        if (refreshedSession) {
-          saveSession(refreshedSession);
+          if (!response.ok) {
+            saveSession(null);
+            return null;
+          }
+
+          const refreshedSession = buildSession(payload);
+          if (refreshedSession) {
+            saveSession(refreshedSession);
+          }
+          return refreshedSession;
+        })();
+
+        try {
+          return await refreshPromise;
+        } finally {
+          refreshPromise = null;
         }
-        return refreshedSession;
       }
 
       async function request(endpoint, options) {
@@ -413,8 +427,17 @@
             return { data, error };
           },
           async signOut() {
+            const session = getStoredSession();
+            let error = null;
+            if (session?.access_token) {
+              const result = await request(`${authUrl}/logout`, {
+                method: "POST",
+                headers: authHeaders(true)
+              });
+              error = result.error;
+            }
             saveSession(null);
-            return { error: null };
+            return { error };
           },
           async getSession() {
             return { data: { session: getStoredSession() } };
@@ -423,7 +446,14 @@
             listeners.push(callback);
           }
         },
-        from: table
+        from: table,
+        rpc(name, values = {}) {
+          return request(`${restUrl}/rpc/${encodeURIComponent(name)}`, {
+            method: "POST",
+            headers: authHeaders(true),
+            body: JSON.stringify(values)
+          });
+        }
       };
     }
 
@@ -795,11 +825,10 @@
         : "終了時刻を過ぎたため変更できません";
     }
 
-    function makeAccountLoginId(password, name) {
-      const role = roleFromPassword(password);
+    function makeAccountLoginIdForRole(role, name) {
       const trimmedName = name.trim();
       if (!trimmedName) {
-        return password;
+        return role;
       }
 
       let hash = 0;
@@ -807,7 +836,11 @@
         hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
       });
 
-      return `${role || "user"}-${Math.abs(hash).toString(36)}`;
+      return `${role}-${Math.abs(hash).toString(36)}`;
+    }
+
+    function makeAccountLoginId(password, name) {
+      return makeAccountLoginIdForRole(roleFromPassword(password), name);
     }
 
     function getPasswordAccount(id, name) {
@@ -844,17 +877,14 @@
     }
 
     function getPasswordCredential() {
-      return normalizeLoginId(accountPassword.value);
+      return accountPassword.value;
     }
 
     function roleFromPassword(value) {
       if (value === ROLE_PASSWORDS.teacher) {
         return "teacher";
       }
-      if (value === ROLE_PASSWORDS.student) {
-        return "student";
-      }
-      return "";
+      return "student";
     }
 
     function roleFromLoginId(value) {
@@ -884,7 +914,7 @@
       return "認証に失敗しました。Supabaseの設定を確認してください。";
     }
 
-    function getAuthInputProblem() {
+    function getAuthInputProblem(forSignup = false) {
       const password = getPasswordCredential();
       const name = displayName.value.trim();
 
@@ -897,8 +927,11 @@
       if (!password) {
         return "パスワードを入力してください。";
       }
-      if (!roleFromPassword(password)) {
-        return "パスワードが違います。";
+      if (password.length < 8) {
+        return "パスワードは8文字以上にしてください。";
+      }
+      if (forSignup && Object.values(ROLE_PASSWORDS).includes(password)) {
+        return "共通パスワードは新規登録に使えません。自分だけのパスワードを入力してください。";
       }
       return "";
     }
@@ -1379,22 +1412,12 @@
 
     function isSchoolLogin(profile, user) {
       const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-      const role = profile?.role || user?.user_metadata?.role || "";
+      const role = profile?.role || "";
       return loginId === "study2026" || loginId === "teach2026" || role === "student" || role === "teacher";
     }
 
-    function displayRoleForAccount(profile, user) {
-      const loginId = profile?.login_id || user?.user_metadata?.login_id || user?.email?.split("@")[0] || "";
-
-      if (loginId === "study2026") {
-        return "student";
-      }
-
-      if (loginId === "teach2026") {
-        return "teacher";
-      }
-
-      return profile?.role || user?.user_metadata?.role || "student";
+    function displayRoleForAccount(profile) {
+      return profile?.role === "teacher" ? "teacher" : "student";
     }
 
     function renderLoggedOut() {
@@ -1643,16 +1666,6 @@
         .single();
 
       if (!error && data) {
-        const loginId = data.login_id || user.user_metadata?.login_id || user.email?.split("@")[0] || "";
-        const expectedRole = roleFromLoginId(loginId);
-        if (expectedRole && data.role !== expectedRole) {
-          const correctedProfile = { ...data, role: expectedRole };
-          const { error: updateError } = await appClient.from("profiles").upsert(correctedProfile);
-          if (updateError && isConnectionError(updateError)) {
-            throw updateError;
-          }
-          return correctedProfile;
-        }
         return data;
       }
 
@@ -1664,7 +1677,7 @@
         id: user.id,
         login_id: user.user_metadata?.login_id || user.email?.split("@")[0],
         display_name: user.user_metadata?.display_name || user.user_metadata?.login_id || user.email,
-        role: user.user_metadata?.role || "student"
+        role: "student"
       };
 
       const { error: upsertError } = await appClient.from("profiles").upsert(fallbackProfile);
@@ -1715,7 +1728,7 @@
         .order("start_time", { ascending: true });
 
       if (error) {
-        roomList.innerHTML = '<p class="empty-rooms">閾ｪ鄙貞ｮ､繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲４upabase縺ｮ繝・・繝悶Ν險ｭ螳壹ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・/p>';
+        roomList.innerHTML = '<p class="empty-rooms">自習室を読み込めませんでした。Supabaseの設定を確認してください。</p>';
         return;
       }
 
@@ -1723,7 +1736,7 @@
     }
 
     async function handleSignUp() {
-      const inputProblem = getAuthInputProblem();
+      const inputProblem = getAuthInputProblem(true);
       if (inputProblem) {
         setAuthMessage(`登録できません。${inputProblem}`, "error");
         authForm.reportValidity();
@@ -1737,9 +1750,10 @@
 
       const id = getPasswordCredential();
       const password = id;
-      const role = roleFromPassword(id);
+      const role = "student";
       const name = displayName.value.trim();
-      const email = loginIdToEmail(makeAccountLoginId(id, name));
+      const accountLoginId = makeAccountLoginIdForRole(role, name);
+      const email = loginIdToEmail(accountLoginId);
 
       setAuthLoading(true);
       setAuthMessage("", "");
@@ -1750,7 +1764,7 @@
           password,
           options: {
             data: {
-              login_id: makeAccountLoginId(id, name),
+              login_id: accountLoginId,
               display_name: name,
               role
             }
@@ -1766,7 +1780,7 @@
 
         if (data.session) {
           await ensureProfile(data.session.user, {
-            login_id: makeAccountLoginId(id, name),
+            login_id: accountLoginId,
             display_name: name,
             role
           });
@@ -1782,8 +1796,6 @@
 
     async function handleSignIn() {
       clearLocalSession();
-      await appClient.auth.signOut();
-      renderLoggedOut();
 
       const inputProblem = getAuthInputProblem();
       if (inputProblem) {
@@ -1797,6 +1809,9 @@
         return;
       }
 
+      await appClient.auth.signOut();
+      renderLoggedOut();
+
       const id = getPasswordCredential();
       const name = displayName.value.trim();
       const password = id;
@@ -1805,10 +1820,23 @@
       setAuthMessage("", "");
 
       try {
-        const { error } = await appClient.auth.signInWithPassword({
-          email: loginIdToEmail(makeAccountLoginId(id, name)),
-          password
-        });
+        const candidateRoles = password === ROLE_PASSWORDS.teacher
+          ? ["teacher", "student"]
+          : ["student", "teacher"];
+        let error = null;
+        for (const role of candidateRoles) {
+          const result = await appClient.auth.signInWithPassword({
+            email: loginIdToEmail(makeAccountLoginIdForRole(role, name)),
+            password
+          });
+          error = result.error;
+          if (!error) {
+            break;
+          }
+          if (!String(error.message || "").toLowerCase().includes("invalid login credentials")) {
+            break;
+          }
+        }
 
         setAuthLoading(false);
 

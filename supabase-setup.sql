@@ -87,8 +87,12 @@ create table if not exists public.study_sessions (
   location text default '',
   ends_at text,
   active boolean not null default true,
-  started_at timestamptz not null default now()
+  started_at timestamptz not null default now(),
+  ended_at timestamptz
 );
+
+alter table public.study_sessions
+add column if not exists ended_at timestamptz;
 
 alter table public.study_rooms
 add column if not exists accepts_requests boolean not null default true;
@@ -163,6 +167,7 @@ drop policy if exists "Students can delete own room plans" on public.study_room_
 drop policy if exists "Students can read own study sessions" on public.study_sessions;
 drop policy if exists "Students can create own study sessions" on public.study_sessions;
 drop policy if exists "Students can update own study sessions" on public.study_sessions;
+drop policy if exists "Students can delete own ended study sessions" on public.study_sessions;
 
 create policy "Users can read profiles"
 on public.profiles
@@ -176,7 +181,7 @@ for insert
 to authenticated
 with check (
   id = auth.uid()
-  and role in ('teacher', 'student')
+  and role = 'student'
 );
 
 create policy "Users can update own profile"
@@ -188,6 +193,31 @@ with check (
   id = auth.uid()
   and role in ('teacher', 'student')
 );
+
+create or replace function public.prevent_profile_identity_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() = old.id then
+    if new.role is distinct from old.role then
+      raise exception 'profile role cannot be changed';
+    end if;
+    if new.login_id is distinct from old.login_id then
+      raise exception 'profile login_id cannot be changed';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.prevent_profile_identity_change() from public;
+drop trigger if exists prevent_profile_identity_change on public.profiles;
+create trigger prevent_profile_identity_change
+before update on public.profiles
+for each row execute function public.prevent_profile_identity_change();
 
 create policy "Students can search student profiles"
 on public.profiles
@@ -316,13 +346,19 @@ create policy "Logged in users can read study requests"
 on public.study_requests
 for select
 to authenticated
-using (true);
+using (created_by = auth.uid());
 
 create policy "Logged in users can create study requests"
 on public.study_requests
 for insert
 to authenticated
-with check (created_by = auth.uid());
+with check (
+  created_by = auth.uid()
+  and exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'student'
+  )
+);
 
 -- Run supabase-fix-receptions.sql for the reception and voting tables.
 
@@ -368,7 +404,21 @@ create policy "Logged in users can read room plans"
 on public.study_room_plans
 for select
 to authenticated
-using (true);
+using (
+  user_id = auth.uid()
+  or exists (
+    select 1
+    from public.student_friends
+    where (
+      student_friends.user_id = auth.uid()
+      and student_friends.friend_id = study_room_plans.user_id
+    )
+    or (
+      student_friends.friend_id = auth.uid()
+      and student_friends.user_id = study_room_plans.user_id
+    )
+  )
+);
 
 create policy "Students can create own room plans"
 on public.study_room_plans
@@ -417,10 +467,56 @@ to authenticated
 using (user_id = auth.uid())
 with check (user_id = auth.uid());
 
+create policy "Students can delete own ended study sessions"
+on public.study_sessions
+for delete
+to authenticated
+using (
+  user_id = auth.uid()
+  and active = false
+);
+
+with ranked_sessions as (
+  select
+    id,
+    row_number() over (
+      partition by user_id
+      order by started_at desc, id desc
+    ) as duplicate_number
+  from public.study_sessions
+  where active = true
+)
+update public.study_sessions sessions
+set active = false,
+    ended_at = coalesce(sessions.ended_at, now())
+from ranked_sessions ranked
+where sessions.id = ranked.id
+  and ranked.duplicate_number > 1;
+
+create unique index if not exists study_sessions_one_active_user_idx
+on public.study_sessions (user_id)
+where active = true;
+
+create or replace function public.get_study_room_plan_counts()
+returns table (room_id bigint, planned_count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select plans.room_id, count(*)::bigint
+  from public.study_room_plans plans
+  where auth.uid() is not null
+  group by plans.room_id;
+$$;
+
+revoke all on function public.get_study_room_plan_counts() from public;
+grant execute on function public.get_study_room_plan_counts() to authenticated;
+
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
 grant select, insert, delete on public.study_room_plans to authenticated;
-grant select, insert, update on public.study_sessions to authenticated;
+grant select, insert, update, delete on public.study_sessions to authenticated;
 
 do $$
 begin

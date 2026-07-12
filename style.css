@@ -756,7 +756,8 @@ p {
 }
 
 .request-panel,
-.study-start-panel {
+.study-start-panel,
+.student-reception-panel {
   margin-top: 16px;
   padding: 22px;
   border: 1px solid var(--line);
@@ -772,6 +773,32 @@ p {
   border-radius: 8px;
   background: var(--panel);
   box-shadow: 0 8px 22px rgba(23, 33, 43, 0.06);
+}
+
+#request-date-step {
+  display: grid;
+  gap: 10px;
+}
+
+.request-next,
+.request-finish {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.request-finish {
+  background: #fff4f4;
+  color: #a02929;
+  border: 1px solid #e4aaaa;
+}
+
+.reception-vote-button {
+  min-width: 92px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .study-start-form {

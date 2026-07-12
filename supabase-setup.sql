@@ -324,6 +324,8 @@ for insert
 to authenticated
 with check (created_by = auth.uid());
 
+-- Run supabase-fix-receptions.sql for the reception and voting tables.
+
 create policy "Students can read own friends"
 on public.student_friends
 for select

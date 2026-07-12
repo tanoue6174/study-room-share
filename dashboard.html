@@ -193,37 +193,36 @@
         <div class="request-heading">
           <div>
             <p class="eyebrow">Request</p>
-            <h3 id="request-title">希望する</h3>
+          <h3 id="request-title">受付を開始する</h3>
           </div>
-          <p>先生に開けてほしい部屋と時間を伝えられます。</p>
+          <p>部屋と日を選んで、生徒の投票受付を開始できます。</p>
         </div>
 
         <form class="request-form" id="request-form">
-          <label for="request-room">開けてほしい部屋</label>
+          <label for="request-room">部屋名</label>
           <select id="request-room" name="request-room" required>
             <option value="">登録されている部屋がありません</option>
           </select>
           <p class="field-help" id="request-room-description" hidden></p>
-
-          <label for="request-date">希望日</label>
-          <select id="request-date" name="request-date" required></select>
-
-          <label for="request-time">希望時間</label>
-          <select id="request-time" name="request-time" size="6" required></select>
-
-          <button class="button primary request-submit" id="request-submit" type="submit">希望を送る</button>
+          <button class="button primary request-next" id="request-next" type="button" disabled>次へ</button>
+          <div id="request-date-step" hidden>
+            <label for="request-date">日</label>
+            <select id="request-date" name="request-date" required></select>
+            <button class="button primary request-submit" id="request-submit" type="submit" disabled>受付を追加</button>
+          </div>
+          <button class="button request-finish" id="request-finish" type="button" hidden>受付を終わる</button>
           <p class="request-message" id="request-message" role="status" aria-live="polite"></p>
         </form>
 
         <div class="request-summary" aria-labelledby="request-summary-title">
-          <h4 id="request-summary-title">希望人数リスト</h4>
+          <h4 id="request-summary-title">希望受付リスト</h4>
           <div class="table-wrap compact-table">
             <table>
               <thead>
                 <tr>
-                  <th>時間</th>
+                  <th>日</th>
                   <th>部屋</th>
-                  <th>希望人数</th>
+                  <th>人数</th>
                 </tr>
               </thead>
               <tbody id="request-summary-list">
@@ -234,6 +233,23 @@
             </table>
           </div>
         </div>
+      </section>
+
+      <section class="student-reception-panel" id="student-reception-panel" aria-labelledby="student-reception-title" hidden>
+        <div class="request-heading">
+          <div>
+            <p class="eyebrow">Reception</p>
+            <h3 id="student-reception-title">受付中の部屋</h3>
+          </div>
+          <p>投票すると、この一覧から表示されなくなります。</p>
+        </div>
+        <div class="table-wrap compact-table">
+          <table>
+            <thead><tr><th>日</th><th>部屋</th><th>投票</th></tr></thead>
+            <tbody id="student-reception-list"><tr><td colspan="3">いません</td></tr></tbody>
+          </table>
+        </div>
+        <p class="request-message" id="student-reception-message" role="status" aria-live="polite"></p>
       </section>
 
       <section class="study-start-panel" id="study-start-panel" aria-labelledby="study-start-title" hidden>
@@ -653,11 +669,16 @@
     const requestRoom = document.getElementById("request-room");
     const requestRoomDescription = document.getElementById("request-room-description");
     const requestDate = document.getElementById("request-date");
-    const requestTime = document.getElementById("request-time");
+    const requestNext = document.getElementById("request-next");
+    const requestDateStep = document.getElementById("request-date-step");
     const requestTitle = document.getElementById("request-title");
     const requestSubmit = document.getElementById("request-submit");
+    const requestFinish = document.getElementById("request-finish");
     const requestMessage = document.getElementById("request-message");
     const requestSummaryList = document.getElementById("request-summary-list");
+    const studentReceptionPanel = document.getElementById("student-reception-panel");
+    const studentReceptionList = document.getElementById("student-reception-list");
+    const studentReceptionMessage = document.getElementById("student-reception-message");
     const studyStartPanel = document.getElementById("study-start-panel");
     const studyStartForm = document.getElementById("study-start-form");
     const studyStartRoom = document.getElementById("study-start-room");
@@ -681,6 +702,8 @@
     let currentUser = null;
     let currentProfile = null;
     let currentRequests = [];
+    let currentReceptions = [];
+    let currentReceptionVotes = [];
     let currentRoomPlans = [];
     let currentFriends = [];
     let currentStudySession = null;
@@ -689,6 +712,8 @@
     const LOCAL_ROOMS_KEY = "study-room-share-local-rooms";
     const LOCAL_ROOM_OPTIONS_KEY = "study-room-share-local-room-options";
     const LOCAL_REQUESTS_KEY = "study-room-share-local-requests";
+    const LOCAL_RECEPTIONS_KEY = "study-room-share-local-receptions";
+    const LOCAL_RECEPTION_VOTES_KEY = "study-room-share-local-reception-votes";
     const LOCAL_FRIENDS_KEY = "study-room-share-local-friends";
     const LOCAL_STUDY_SESSIONS_KEY = "study-room-share-local-study-sessions";
     const PLANNED_ROOMS_KEY = "study-room-share-planned-rooms";
@@ -756,17 +781,19 @@
       setText('#room-option-accepts-requests option[value="true"]', '受け付ける');
       setText('#room-option-accepts-requests option[value="false"]', '受け付けない');
       setText('#room-option-submit', '部屋を追加');
-      setText('#request-title', '希望する');
-      setText('.request-panel .request-heading p:last-child', '先生に開けてほしい部屋と時間を伝えられます。');
-      setText('label[for="request-room"]', '開けてほしい部屋');
-      setText('#request-room option[value=""]', '登録されている部屋がありません');
-      setText('label[for="request-date"]', '希望日');
-      setText('label[for="request-time"]', '希望時間');
-      setText('#request-submit', '希望を送る');
-      setText('#request-summary-title', '希望人数リスト');
-      setText('.request-summary th:nth-child(1)', '時間');
+      setText('#request-title', '受付を開始する');
+      setText('.request-panel .request-heading p:last-child', '部屋と日を選んで、生徒の投票受付を開始できます。');
+      setText('label[for="request-room"]', '部屋名');
+      setText('#request-room option[value=""]', '部屋を選んでください');
+      setText('label[for="request-date"]', '日');
+      setText('#request-next', '次へ');
+      setText('#request-submit', '受付を追加');
+      setText('#request-finish', '受付を終わる');
+      setText('#request-summary-title', '希望受付リスト');
+      setText('.request-summary th:nth-child(1)', '日');
       setText('.request-summary th:nth-child(2)', '部屋');
-      setText('.request-summary th:nth-child(3)', '希望人数');
+      setText('.request-summary th:nth-child(3)', '人数');
+      setText('#student-reception-title', '受付中の部屋');
       setText('#study-start-title', '自習を開始する');
       setText('#study-start-panel .request-heading p:last-child', '今どこで自習しているかを登録できます。');
       setText('label[for="study-start-room"]', '自習している部屋');
@@ -999,6 +1026,22 @@
 
     function saveLocalRequests(requests) {
       writeLocalJson(LOCAL_REQUESTS_KEY, requests);
+    }
+
+    function getLocalReceptions() {
+      return readLocalJson(LOCAL_RECEPTIONS_KEY, []);
+    }
+
+    function saveLocalReceptions(receptions) {
+      writeLocalJson(LOCAL_RECEPTIONS_KEY, receptions);
+    }
+
+    function getLocalReceptionVotes() {
+      return readLocalJson(LOCAL_RECEPTION_VOTES_KEY, []);
+    }
+
+    function saveLocalReceptionVotes(votes) {
+      writeLocalJson(LOCAL_RECEPTION_VOTES_KEY, votes);
     }
 
     function getLocalFriends() {
@@ -1471,26 +1514,6 @@
       return "";
     }
 
-    function getRequestTimeProblem(dateValue, timeValue) {
-      const now = new Date();
-      const max = maxAllowedDateTime();
-      const requestAt = dateTimeFromInputs(dateValue, timeValue);
-
-      if (!requestAt) {
-        return "入力内容を確認してください。";
-      }
-
-      if (requestAt <= now) {
-        return "入力内容を確認してください。";
-      }
-
-      if (requestAt > max) {
-        return "入力内容を確認してください。";
-      }
-
-      return "";
-    }
-
     function buildDateOptions(selectElement, placeholderText) {
       selectElement.innerHTML = "";
 
@@ -1519,21 +1542,6 @@
           weekday: "short"
         });
         selectElement.appendChild(option);
-      }
-    }
-
-    function buildRequestTimeOptions() {
-      requestTime.innerHTML = "";
-
-      for (let hour = 6; hour <= 24; hour += 1) {
-        const minuteSteps = hour === 24 ? [0] : [0, 30];
-        minuteSteps.forEach((minute) => {
-          const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-          const option = document.createElement("option");
-          option.value = label;
-          option.textContent = label;
-          requestTime.appendChild(option);
-        });
       }
     }
 
@@ -1650,10 +1658,15 @@
         option.textContent = "登録されている部屋がありません";
         requestRoom.appendChild(option);
         requestRoom.disabled = true;
-        requestSubmit.disabled = true;
+        requestNext.disabled = true;
         syncSelectedRequestRoomDescription();
         return;
       }
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "部屋を選んでください";
+      requestRoom.appendChild(placeholder);
 
       requestableRooms.forEach((room) => {
         const option = document.createElement("option");
@@ -1664,8 +1677,23 @@
       });
 
       requestRoom.disabled = false;
-      requestSubmit.disabled = !currentUser;
+      requestNext.disabled = !currentUser;
       syncSelectedRequestRoomDescription();
+    }
+
+    function resetReceptionForm() {
+      requestRoom.value = "";
+      requestDate.value = "";
+      requestDateStep.hidden = true;
+      requestNext.hidden = false;
+      requestNext.disabled = !currentUser || requestRoom.disabled;
+      requestSubmit.disabled = true;
+      syncSelectedRequestRoomDescription();
+    }
+
+    function updateReceptionStep() {
+      requestNext.disabled = !requestRoom.value;
+      requestSubmit.disabled = !requestDate.value;
     }
 
     function studyRoomOptionLabel(room) {
@@ -1960,9 +1988,8 @@
         studyStartPanel.hidden = true;
       }
       if (requestTitle) {
-        requestTitle.textContent = "希望する";
+        requestTitle.textContent = "受付を開始する";
       }
-      requestSubmit.textContent = "希望を送る";
       signoutButton.hidden = true;
       signupButton.hidden = false;
       signinButton.hidden = false;
@@ -1976,7 +2003,9 @@
       updateRequestRoomOptions([]);
       renderRoomOptions([]);
       setRoomOptionMessage("", "");
-      renderRequestSummary([]);
+      renderRequestSummary([], []);
+      renderStudentReceptions([], []);
+      requestFinish.hidden = true;
       setRequestMessage("", "");
       updateStudyStartRoomOptions([]);
       renderStudyStatus(null);
@@ -2012,15 +2041,15 @@
         roomLayout.hidden = !isDashboardPage;
       }
       if (requestPanel) {
-        requestPanel.hidden = !isDashboardPage;
+        requestPanel.hidden = !isDashboardPage || role !== "teacher";
+      }
+      if (studentReceptionPanel) {
+        studentReceptionPanel.hidden = !isDashboardPage || role !== "student";
       }
       if (studyStartPanel) {
         studyStartPanel.hidden = !isDashboardPage || role !== "student";
       }
-      if (requestTitle) {
-        requestTitle.textContent = role === "teacher" ? "受け付ける" : "希望する";
-      }
-      requestSubmit.textContent = role === "teacher" ? "受け付ける" : "希望を送る";
+      if (requestTitle) { requestTitle.textContent = "受付を開始する"; }
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
       if (isDashboardPage && role === "teacher") {
@@ -2928,90 +2957,99 @@
       renderRooms(visibleRooms);
     }
 
-    function renderRequestSummary(requests) {
+    function renderRequestSummary(receptions, votes) {
       requestSummaryList.innerHTML = "";
 
-      if (!requests.length) {
+      if (!receptions.length) {
         requestSummaryList.innerHTML = '<tr><td colspan="3">いません</td></tr>';
         return;
       }
 
-      const summary = new Map();
-      requests.forEach((request) => {
-        const key = `${request.request_date}|${request.request_time}|${request.room_option_id || request.room_id}`;
-        const current = summary.get(key) || {
-          request_date: request.request_date,
-          request_time: request.request_time,
-          room_location: request.room_location,
-          count: 0
-        };
-        current.count += 1;
-        summary.set(key, current);
-      });
-
-      Array.from(summary.values())
-        .sort((a, b) => `${a.request_date} ${a.request_time}`.localeCompare(`${b.request_date} ${b.request_time}`))
+      receptions
+        .sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date)))
         .forEach((item) => {
           const row = document.createElement("tr");
           const timeCell = document.createElement("td");
           const roomCell = document.createElement("td");
           const countCell = document.createElement("td");
 
-          timeCell.dataset.label = "時間";
+          timeCell.dataset.label = "日";
           roomCell.dataset.label = "部屋";
-          countCell.dataset.label = "希望人数";
+          countCell.dataset.label = "人数";
 
-          timeCell.textContent = `${formatSelectedDate(item.request_date)} ${item.request_time}`;
-          roomCell.textContent = item.room_location;
-          countCell.textContent = `${item.count}莠ｺ`;
+          timeCell.textContent = formatSelectedDate(item.reception_date);
+          roomCell.textContent = item.room_name;
+          countCell.textContent = `${votes.filter((vote) => String(vote.reception_id) === String(item.id)).length}人`;
 
           row.append(timeCell, roomCell, countCell);
           requestSummaryList.appendChild(row);
         });
     }
 
+    function renderStudentReceptions(receptions, votes) {
+      if (!studentReceptionList || !currentUser) return;
+      studentReceptionList.innerHTML = "";
+      const votedIds = new Set(votes.filter((vote) => String(vote.student_id) === String(currentUser.id)).map((vote) => String(vote.reception_id)));
+      const visible = receptions.filter((reception) => !votedIds.has(String(reception.id)));
+      if (!visible.length) {
+        studentReceptionList.innerHTML = '<tr><td colspan="3">いません</td></tr>';
+        return;
+      }
+      visible.sort((a, b) => String(a.reception_date).localeCompare(String(b.reception_date))).forEach((reception) => {
+        const row = document.createElement("tr");
+        const dateCell = document.createElement("td");
+        const roomCell = document.createElement("td");
+        const voteCell = document.createElement("td");
+        dateCell.dataset.label = "日";
+        roomCell.dataset.label = "部屋";
+        voteCell.dataset.label = "投票";
+        dateCell.textContent = formatSelectedDate(reception.reception_date);
+        roomCell.textContent = reception.room_name;
+        const voteButton = document.createElement("button");
+        voteButton.type = "button";
+        voteButton.className = "button primary reception-vote-button";
+        voteButton.dataset.receptionId = reception.id;
+        voteButton.textContent = "投票する";
+        voteCell.appendChild(voteButton);
+        row.append(dateCell, roomCell, voteCell);
+        studentReceptionList.appendChild(row);
+      });
+    }
+
     async function loadRequests() {
       if (!currentUser) {
-        currentRequests = [];
-        renderRequestSummary([]);
+        currentReceptions = [];
+        currentReceptionVotes = [];
+        renderRequestSummary([], []);
+        renderStudentReceptions([], []);
         return;
       }
 
       if (String(currentUser.id).startsWith("local-")) {
-        currentRequests = getLocalRequests();
-        renderRequestSummary(currentRequests);
+        currentReceptions = getLocalReceptions().filter((item) => item.active !== false);
+        currentReceptionVotes = getLocalReceptionVotes();
+        renderRequestSummary(currentReceptions, currentReceptionVotes);
+        renderStudentReceptions(currentReceptions, currentReceptionVotes);
+        requestFinish.hidden = !currentReceptions.length;
         return;
       }
 
-      const { data, error } = await appClient
-        .from("study_requests")
-        .select("id, room_id, room_option_id, room_location, request_date, request_time, created_at")
-        .order("request_date", { ascending: true })
-        .order("request_time", { ascending: true });
-
-      if (error) {
-        const fallback = await appClient
-          .from("study_requests")
-          .select("id, room_id, request_date, request_time, created_at")
-          .order("request_date", { ascending: true })
-          .order("request_time", { ascending: true });
-
-        if (!fallback.error) {
-          currentRequests = (fallback.data || []).map((request) => ({
-            ...request,
-            room_location: "Unknown room"
-          }));
-          renderRequestSummary(currentRequests);
-          return;
-        }
-
-        currentRequests = [];
-        renderRequestSummary([]);
+      const [{ data: receptions, error: receptionError }, { data: votes, error: voteError }] = await Promise.all([
+        appClient.from("study_receptions").select("id, room_option_id, room_name, reception_date, created_by, active, created_at").eq("active", true).order("reception_date", { ascending: true }),
+        appClient.from("study_reception_votes").select("id, reception_id, student_id, created_at")
+      ]);
+      if (receptionError || voteError) {
+        currentReceptions = [];
+        currentReceptionVotes = [];
+        renderRequestSummary([], []);
+        renderStudentReceptions([], []);
         return;
       }
-
-      currentRequests = data || [];
-      renderRequestSummary(currentRequests);
+      currentReceptions = receptions || [];
+      currentReceptionVotes = votes || [];
+      renderRequestSummary(currentReceptions, currentReceptionVotes);
+      renderStudentReceptions(currentReceptions, currentReceptionVotes);
+      requestFinish.hidden = !currentReceptions.some((item) => String(item.created_by) === String(currentUser.id));
     }
 
     async function handleSignUp() {
@@ -3424,7 +3462,7 @@
     async function handleRequestSubmit(event) {
       event.preventDefault();
 
-      if (!currentUser) {
+      if (!currentUser || displayRoleForAccount(currentProfile, currentUser) !== "teacher") {
         setRequestMessage("エラーが発生しました。", "error");
         return;
       }
@@ -3439,49 +3477,91 @@
         return;
       }
 
-      const selectedRoom = requestRoom.options[requestRoom.selectedIndex].textContent;
-      const selectedDate = formatSelectedDate(requestDate.value);
-      const selectedTime = requestTime.options[requestTime.selectedIndex].textContent;
-      const requestTimeProblem = getRequestTimeProblem(requestDate.value, selectedTime);
-      if (requestTimeProblem) {
-        setRequestMessage(requestTimeProblem, "error");
-        return;
-      }
-
-      const requestPayload = {
-        room_id: null,
+      const receptionPayload = {
         room_option_id: requestRoom.value,
-        room_location: selectedRoom,
-        request_date: requestDate.value,
-        request_time: selectedTime,
+        room_name: requestRoom.options[requestRoom.selectedIndex].textContent,
+        reception_date: requestDate.value,
         created_by: currentUser.id,
+        active: true,
         created_at: new Date().toISOString()
       };
 
       if (String(currentUser.id).startsWith("local-")) {
-        const requests = getLocalRequests();
-        requests.push({
+        const receptions = getLocalReceptions();
+        receptions.push({
           id: Date.now(),
-          ...requestPayload
+          ...receptionPayload
         });
-        saveLocalRequests(requests);
-        currentRequests = requests;
-        renderRequestSummary(requests);
-        await loadRooms();
-        setRequestMessage(`${selectedDate} ${selectedTime} の ${selectedRoom} に希望を送りました。`, "success");
+        saveLocalReceptions(receptions);
+        await loadRequests();
+        resetReceptionForm();
+        setRequestMessage("受付を追加しました。", "success");
         return;
       }
 
-      const { error } = await appClient.from("study_requests").insert(requestPayload);
+      const { error } = await appClient.from("study_receptions").insert(receptionPayload);
 
       if (error) {
-        setRequestMessage("エラーが発生しました。", "error");
+        setRequestMessage("受付を追加できませんでした。Supabaseの受付設定を確認してください。", "error");
         return;
       }
 
       await loadRequests();
-      await loadRooms();
-      setRequestMessage(`${selectedDate} ${selectedTime} の ${selectedRoom} に希望を送りました。`, "success");
+      resetReceptionForm();
+      setRequestMessage("受付を追加しました。", "success");
+    }
+
+    function handleRequestNext() {
+      if (!requestRoom.value) return;
+      requestDateStep.hidden = false;
+      requestNext.hidden = true;
+      updateReceptionStep();
+      requestDate.focus();
+    }
+
+    async function handleReceptionFinish() {
+      const ownReceptions = currentReceptions.filter((item) => String(item.created_by) === String(currentUser?.id));
+      if (!ownReceptions.length || !window.confirm("受付を終了しますか？投票結果も含めて全員の一覧から消えます。")) return;
+      const ids = ownReceptions.map((item) => item.id);
+      if (String(currentUser.id).startsWith("local-")) {
+        saveLocalReceptions(getLocalReceptions().filter((item) => !ids.includes(item.id)));
+        saveLocalReceptionVotes(getLocalReceptionVotes().filter((vote) => !ids.includes(vote.reception_id)));
+        await loadRequests();
+        resetReceptionForm();
+        setRequestMessage("受付を終了しました。", "success");
+        return;
+      }
+      const { error } = await appClient.from("study_receptions").delete().in("id", ids).eq("created_by", currentUser.id);
+      if (error) {
+        setRequestMessage("受付を終了できませんでした。", "error");
+        return;
+      }
+      await loadRequests();
+      resetReceptionForm();
+      setRequestMessage("受付を終了しました。", "success");
+    }
+
+    async function handleReceptionVote(event) {
+      const button = event.target.closest(".reception-vote-button");
+      if (!button || !currentUser) return;
+      const receptionId = button.dataset.receptionId;
+      button.disabled = true;
+      if (String(currentUser.id).startsWith("local-")) {
+        const votes = getLocalReceptionVotes();
+        votes.push({ id: Date.now(), reception_id: Number(receptionId), student_id: currentUser.id, created_at: new Date().toISOString() });
+        saveLocalReceptionVotes(votes);
+        await loadRequests();
+        studentReceptionMessage.textContent = "投票しました。";
+        return;
+      }
+      const { error } = await appClient.from("study_reception_votes").insert({ reception_id: receptionId, student_id: currentUser.id });
+      if (error) {
+        button.disabled = false;
+        studentReceptionMessage.textContent = "投票できませんでした。";
+        return;
+      }
+      await loadRequests();
+      studentReceptionMessage.textContent = "投票しました。";
     }
 
     async function handleStudyStartSubmit(event) {
@@ -3675,8 +3755,17 @@
     roomOptionList.addEventListener("change", handleRoomOptionSettingChange);
     roomName.addEventListener("change", syncSelectedRoomLocation);
     startTime.addEventListener("change", updateRoomEndTimeOptions);
-    requestRoom.addEventListener("change", syncSelectedRequestRoomDescription);
+    requestRoom.addEventListener("change", () => {
+      syncSelectedRequestRoomDescription();
+      updateReceptionStep();
+    });
+    requestDate.addEventListener("change", updateReceptionStep);
     requestForm.addEventListener("submit", handleRequestSubmit);
+    requestNext.addEventListener("click", handleRequestNext);
+    requestFinish.addEventListener("click", handleReceptionFinish);
+    if (studentReceptionList) {
+      studentReceptionList.addEventListener("click", handleReceptionVote);
+    }
     if (studyStartForm) {
       studyStartRoom.addEventListener("change", () => {
         buildStudyEndTimeOptions();
@@ -3713,9 +3802,9 @@
       buildDateOptions(availableDate, "日付を選んでください");
       buildDateOptions(requestDate, "希望日を選んでください");
       buildRoomTimeOptions();
-      buildRequestTimeOptions();
       buildStudyEndTimeOptions();
       updateRequestRoomOptions([]);
+      resetReceptionForm();
       updateStudyStartRoomOptions([]);
 
       if (isDashboardPage) {

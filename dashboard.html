@@ -449,6 +449,18 @@
             state.filters.push(`${encodeURIComponent(column)}=neq.${encodeURIComponent(value)}`);
             return builder;
           },
+          gte(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=gte.${encodeURIComponent(value)}`);
+            return builder;
+          },
+          lt(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=lt.${encodeURIComponent(value)}`);
+            return builder;
+          },
+          is(column, value) {
+            state.filters.push(`${encodeURIComponent(column)}=is.${encodeURIComponent(value)}`);
+            return builder;
+          },
           in(column, values) {
             const list = (values || []).map((value) => encodeURIComponent(value)).join(",");
             state.filters.push(`${encodeURIComponent(column)}=in.(${list})`);
@@ -2699,8 +2711,8 @@
     function isTanouePresentationAccount() {
       const displayName = normalizeFriendSearchText(currentProfile?.display_name || "");
       const loginIdValue = normalizeFriendSearchText(currentProfile?.login_id || currentUser?.user_metadata?.login_id || "");
-      return ["tanoue", "tanoue01"].includes(displayName)
-        || ["tanoue", "tanoue01", "student-ekj8xu", "student-92msu9"].includes(loginIdValue);
+      return displayName === "tanoue"
+        || ["tanoue", "student-ekj8xu"].includes(loginIdValue);
     }
 
     async function ensureTanouePresentationFriends(existingFriendIds = new Set()) {

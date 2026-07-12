@@ -1637,9 +1637,6 @@
       requestRoom.innerHTML = "";
       const roomNames = new Set();
       const requestableRooms = rooms.filter((room) => {
-        if (room.accepts_requests === false) {
-          return false;
-        }
         const roomName = String(room.room_name || "").trim();
         if (!roomName || roomNames.has(roomName)) {
           return false;

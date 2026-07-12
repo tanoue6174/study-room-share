@@ -2696,6 +2696,50 @@
       studyStatus.appendChild(item);
     }
 
+    function isTanouePresentationAccount() {
+      const displayName = normalizeFriendSearchText(currentProfile?.display_name || "");
+      const loginIdValue = normalizeFriendSearchText(currentProfile?.login_id || currentUser?.user_metadata?.login_id || "");
+      return ["tanoue", "tanoue01"].includes(displayName)
+        || ["tanoue", "tanoue01", "student-ekj8xu", "student-92msu9"].includes(loginIdValue);
+    }
+
+    async function ensureTanouePresentationFriends(existingFriendIds = new Set()) {
+      if (!currentUser || !isTanouePresentationAccount() || displayRoleForAccount(currentProfile, currentUser) !== "student") {
+        return false;
+      }
+
+      const targetNames = new Set(["Aさん", "A", "Bさん", "B", "Cさん", "C", "Dさん", "D", "Eさん", "E"]);
+      const { data: profiles, error } = await appClient
+        .from("profiles")
+        .select("id, login_id, display_name, role")
+        .eq("role", "student");
+      if (error) {
+        return false;
+      }
+
+      const targets = (profiles || []).filter((profile) => (
+        String(profile.id) !== String(currentUser.id)
+        && (
+          targetNames.has(profile.display_name || "")
+          || targetNames.has(profile.login_id || "")
+        )
+        && !existingFriendIds.has(String(profile.id))
+      ));
+      if (!targets.length) {
+        return false;
+      }
+
+      const { error: upsertError } = await appClient.from("student_friends").upsert(
+        targets.map((profile) => ({
+          user_id: currentUser.id,
+          friend_id: profile.id,
+          friend_name: profile.display_name || profile.login_id || "名前なし"
+        })),
+        { onConflict: "user_id,friend_id" }
+      );
+      return !upsertError;
+    }
+
     async function loadStudySession() {
       if (!currentUser || !studyStatus) {
         renderStudyStatus(null);
@@ -2729,7 +2773,7 @@
       return session;
     }
 
-    async function loadFriends() {
+    async function loadFriends(shouldEnsurePresentationFriends = true) {
       if (!currentUser || !friendList) {
         currentFriends = [];
         renderFriendList([]);
@@ -2808,6 +2852,10 @@
       remoteFriends = Array.from(uniqueFriends.values());
 
       const friendIds = remoteFriends.map((friend) => friend.id).filter(Boolean);
+      if (shouldEnsurePresentationFriends && await ensureTanouePresentationFriends(new Set(friendIds.map((id) => String(id))))) {
+        return loadFriends(false);
+      }
+
       if (friendIds.length) {
         const { data: friendProfiles, error: profileError } = await appClient
           .from("profiles")

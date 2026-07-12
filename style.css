@@ -1300,6 +1300,10 @@ p {
   color: #16833a;
 }
 
+.friend-weekly-total {
+  color: #2c5f91;
+}
+
 .friend-item span {
   margin-top: 3px;
   color: var(--muted);

@@ -31,7 +31,10 @@ create policy "Students can read own friends"
 on public.student_friends
 for select
 to authenticated
-using (user_id = auth.uid());
+using (
+  user_id = auth.uid()
+  or friend_id = auth.uid()
+);
 
 create policy "Students can create own friends"
 on public.student_friends
@@ -57,10 +60,28 @@ create policy "Students can delete own friends"
 on public.student_friends
 for delete
 to authenticated
-using (user_id = auth.uid());
+using (
+  user_id = auth.uid()
+  or friend_id = auth.uid()
+);
 
 grant select on public.profiles to authenticated;
 grant select, insert, delete on public.student_friends to authenticated;
+
+insert into public.student_friends (user_id, friend_id, friend_name)
+select
+  original.friend_id,
+  original.user_id,
+  coalesce(friend_profile.display_name, original.friend_name, '名前なし')
+from public.student_friends original
+left join public.profiles friend_profile on friend_profile.id = original.user_id
+where not exists (
+  select 1
+  from public.student_friends reverse_friend
+  where reverse_friend.user_id = original.friend_id
+    and reverse_friend.friend_id = original.user_id
+)
+on conflict (user_id, friend_id) do nothing;
 
 do $$
 begin

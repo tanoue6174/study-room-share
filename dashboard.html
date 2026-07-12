@@ -164,14 +164,14 @@
           <p>自習室登録で使う部屋を先に追加できます。</p>
         </div>
 
-        <form class="room-option-form" id="room-option-form">
+        <form class="room-option-form" id="room-option-form" autocomplete="off">
           <div>
             <label for="room-option-name">部屋名</label>
-            <input id="room-option-name" name="room-option-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" required>
+            <input id="room-option-name" name="room-option-name" type="text" maxlength="60" placeholder="例: 3年A組 教室" autocomplete="off" required>
           </div>
           <div>
             <label for="room-option-location">場所</label>
-            <input id="room-option-location" name="room-option-location" type="text" maxlength="20" placeholder="例: 3階 東側">
+            <input id="room-option-location" name="room-option-location" type="text" maxlength="20" placeholder="例: 3階 東側" autocomplete="off">
           </div>
           <div>
             <label for="room-option-accepts-requests">希望受付</label>
@@ -2006,6 +2006,7 @@
       roomForm.hidden = !isDashboardPage || role !== "teacher";
       roomSettingsPanel.hidden = !isDashboardPage || role !== "teacher";
       if (isDashboardPage && role === "teacher") {
+        roomOptionForm.reset();
         ensureRoomScheduleControls();
       }
       if (friendsPanel) {

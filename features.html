@@ -23,7 +23,8 @@
       <p class="eyebrow">Features</p>
       <h1>主な機能</h1>
       <p class="lead compact">
-        生徒が使いやすく、先生が管理しやすいように、場所・時間・人数を中心に整理します。
+        放課後の自習場所を、生徒が選びやすく、先生が管理しやすくするためのアプリです。
+        「どの部屋が、いつ、何人まで使えるか」と「どの時間に希望が集まっているか」を分かりやすく整理します。
       </p>
     </section>
 
@@ -31,59 +32,281 @@
       <div class="feature-grid">
         <article class="card">
           <span class="number blue">1</span>
-          <h2>時間ごとの空き教室を確認</h2>
-          <p>何時から何時まで、どの教室や部屋が自習に使えるのかを一覧で確認できます。</p>
+          <h2>使える部屋を一覧で確認</h2>
+          <p>先生が登録した教室や自習スペースを、時間・場所・定員と一緒に確認できます。</p>
         </article>
         <article class="card">
           <span class="number green">2</span>
-          <h2>友達の勉強場所が分かる</h2>
-          <p>誰がどこで勉強しているのかを見られるため、一人では続きにくい自習も始めやすくなります。</p>
+          <h2>友達の予定が分かる</h2>
+          <p>友達がどの部屋で勉強する予定かを見られるので、同じ場所に集まりやすくなります。</p>
         </article>
         <article class="card">
           <span class="number yellow">3</span>
-          <h2>使いたい時間を先生に送る</h2>
-          <p>生徒はアプリから希望する部屋と時間を送り、先生は希望人数を確認できます。</p>
+          <h2>受付中の部屋に投票</h2>
+          <p>先生が受付を始めた部屋に、生徒が「使いたい」と投票できます。</p>
         </article>
         <article class="card">
           <span class="number red">4</span>
-          <h2>利用人数を見て計画</h2>
-          <p>先生は人数の多い部屋を優先して開けるなど、教室利用の計画を立てやすくなります。</p>
+          <h2>先生が開放計画を立てる</h2>
+          <p>希望人数を見ながら、どの部屋をいつ開けるかを決めやすくします。</p>
         </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="two-column">
+        <article class="panel">
+          <h2>生徒にとって</h2>
+          <p>
+            空いている場所を探す時間を減らし、勉強を始めやすくします。
+            受付中の部屋へ投票したり、友達の自習状況を見たりしてから動けます。
+          </p>
+        </article>
+        <article class="panel">
+          <h2>先生にとって</h2>
+          <p>
+            口頭や紙で集めていた自習希望を、部屋と時間ごとに整理できます。
+            投票人数が多い日や部屋を見て、教室の準備や見守りをしやすくします。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section feature-static-sample">
+      <div class="section-heading">
+        <p class="eyebrow">Voting</p>
+        <h2>受付中の部屋と投票リストの例</h2>
+        <p class="lead compact">
+          先生が登録した受付に、生徒が投票できます。
+          投票結果は先生側で部屋ごと・日付ごとの人数として確認できます。
+        </p>
+      </div>
+      <div class="two-column">
+        <article class="student-reception-panel">
+          <div class="request-heading">
+            <div>
+              <p class="eyebrow">Student</p>
+              <h3>受付中の部屋</h3>
+            </div>
+            <p>使いたい部屋に投票できます。</p>
+          </div>
+          <div class="reception-group-list">
+            <section class="reception-group">
+              <h5 class="reception-group-title">CAD室</h5>
+              <div class="reception-result-list">
+                <div class="reception-result-row">
+                  <span>07/12（日）</span>
+                  <button class="button primary reception-vote-button" type="button">投票する</button>
+                </div>
+                <div class="reception-result-row">
+                  <span>07/13（月）</span>
+                  <button class="button primary reception-vote-button" type="button">投票する</button>
+                </div>
+              </div>
+            </section>
+            <section class="reception-group">
+              <h5 class="reception-group-title">図書室</h5>
+              <div class="reception-result-list">
+                <div class="reception-result-row">
+                  <span>07/12（日）</span>
+                  <button class="button primary reception-vote-button" type="button">投票する</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="request-panel">
+          <div class="request-heading">
+            <div>
+              <p class="eyebrow">Teacher</p>
+              <h3>希望受付リスト</h3>
+            </div>
+            <p>投票数を見て開放する部屋を考えます。</p>
+          </div>
+          <div class="reception-group-list">
+            <section class="reception-group">
+              <div class="reception-group-heading">
+                <h5>CAD室</h5>
+              </div>
+              <div class="reception-result-list">
+                <div class="reception-result-row">
+                  <span>07/12（日）</span>
+                  <strong>14人</strong>
+                </div>
+                <div class="reception-result-row">
+                  <span>07/13（月）</span>
+                  <strong>9人</strong>
+                </div>
+              </div>
+            </section>
+            <section class="reception-group">
+              <div class="reception-group-heading">
+                <h5>図書室</h5>
+              </div>
+              <div class="reception-result-list">
+                <div class="reception-result-row">
+                  <span>07/12（日）</span>
+                  <strong>8人</strong>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section feature-static-sample">
+      <div class="section-heading">
+        <p class="eyebrow">Friends</p>
+        <h2>友達リストの例</h2>
+        <p class="lead compact">
+          友達が自習中か、どこで勉強しているか、どんなコメントを出しているかを確認できます。
+        </p>
+      </div>
+      <div class="friends-panel">
+        <div class="request-heading">
+          <div>
+            <p class="eyebrow">Friends</p>
+            <h3>友達</h3>
+          </div>
+          <p>生徒アカウントを名前で検索できます。</p>
+        </div>
+        <div class="friend-list-wrap">
+          <div class="friend-list-toolbar">
+            <h4>友達</h4>
+          </div>
+          <div class="friend-list">
+            <article class="friend-item is-studying">
+              <div class="friend-name-block is-studying">
+                <div class="friend-name-row">
+                  <strong>田中さん</strong>
+                  <span class="friend-study-duration">自習中</span>
+                </div>
+                <span>CAD室</span>
+              </div>
+              <div class="friend-status-block">
+                <strong class="friend-study-status">集中しています</strong>
+                <p class="friend-comment-preview">数学の課題を進めます</p>
+              </div>
+              <button class="friend-remove-button" type="button">解除</button>
+            </article>
+            <article class="friend-item">
+              <div class="friend-name-block">
+                <div class="friend-name-row">
+                  <strong>佐藤さん</strong>
+                </div>
+                <span>今日の予定は未登録</span>
+              </div>
+              <div class="friend-status-block">
+                <strong class="friend-study-status">勉強状況</strong>
+                <p class="friend-comment-preview">コメント</p>
+              </div>
+              <button class="friend-remove-button" type="button">解除</button>
+            </article>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-heading">
         <p class="eyebrow">Sample</p>
-        <h2>リスト表示の例</h2>
+        <h2>実際のリスト表示の例</h2>
+        <p class="lead compact">
+          「ある学校」で表示される実際の画面に近い形です。
+          生徒は時間、部屋、利用予定人数を見ながら、自習する場所を選べます。
+        </p>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>時間</th>
-              <th>使える場所</th>
-              <th>利用予定</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>15:30-16:30</td>
-              <td>3年A組 教室</td>
-              <td>12/20</td>
-            </tr>
-            <tr>
-              <td>15:30-17:00</td>
-              <td>図書室</td>
-              <td>8/20</td>
-            </tr>
-            <tr>
-              <td>16:30-18:00</td>
-              <td>多目的室</td>
-              <td>18/30</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="sample-dashboard">
+        <div class="role-summary sample-role-summary">
+          <div class="school-banner">ある学校</div>
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h3>生徒用 自習室リスト</h3>
+          </div>
+          <p>先生が登録した自習室を確認できます。</p>
+        </div>
+
+        <div class="room-list-panel">
+          <div class="list-toolbar">
+            <h3>使える自習室</h3>
+            <button class="button auth-button-muted" type="button">更新</button>
+          </div>
+          <div class="room-list">
+            <section class="room-date-group" aria-label="2026年7月12日の自習室">
+              <h4 class="room-date-heading">2026/07/12（日）</h4>
+
+              <article class="room-item is-planned-room">
+                <div class="room-list-cell room-time-cell">
+                  <span class="room-list-label">時間</span>
+                  <div class="room-time-value">
+                    <strong>15:30-16:30</strong>
+                    <button class="planned-room-toggle is-selected" type="button" aria-label="行く予定"></button>
+                  </div>
+                </div>
+                <div class="room-list-cell room-name-cell">
+                  <span class="room-list-label">部屋</span>
+                  <button class="room-name-toggle" type="button">3年A組 教室</button>
+                  <p class="room-location-description">3階東側。静かに自習したい人向け。</p>
+                </div>
+                <div class="room-list-cell room-crowd-cell">
+                  <span class="room-list-label">利用予定</span>
+                  <strong>12/20</strong>
+                  <div class="room-friends-wrap">
+                    <button class="room-friends-button" type="button">友達</button>
+                    <p class="room-friends-detail">田中さん、佐藤さん</p>
+                  </div>
+                </div>
+              </article>
+
+              <article class="room-item">
+                <div class="room-list-cell room-time-cell">
+                  <span class="room-list-label">時間</span>
+                  <div class="room-time-value">
+                    <strong>15:30-17:00</strong>
+                    <button class="planned-room-toggle" type="button" aria-label="行く予定にする"></button>
+                  </div>
+                </div>
+                <div class="room-list-cell room-name-cell">
+                  <span class="room-list-label">部屋</span>
+                  <button class="room-name-toggle" type="button">図書室</button>
+                  <p class="room-location-description">1階。読書や個人学習に使いやすい場所。</p>
+                </div>
+                <div class="room-list-cell room-crowd-cell">
+                  <span class="room-list-label">利用予定</span>
+                  <strong>8/20</strong>
+                  <div class="room-friends-wrap">
+                    <button class="room-friends-button" type="button">友達</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="room-item">
+                <div class="room-list-cell room-time-cell">
+                  <span class="room-list-label">時間</span>
+                  <div class="room-time-value">
+                    <strong>16:30-18:00</strong>
+                    <button class="planned-room-toggle" type="button" aria-label="行く予定にする"></button>
+                  </div>
+                </div>
+                <div class="room-list-cell room-name-cell">
+                  <span class="room-list-label">部屋</span>
+                  <button class="room-name-toggle" type="button">多目的室</button>
+                  <p class="room-location-description">2階中央。グループ学習にも使えます。</p>
+                </div>
+                <div class="room-list-cell room-crowd-cell">
+                  <span class="room-list-label">利用予定</span>
+                  <strong>18/30</strong>
+                  <div class="room-friends-wrap">
+                    <button class="room-friends-button" type="button">友達</button>
+                    <p class="room-friends-detail">山本さん</p>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -91,6 +314,10 @@
       <div class="section-heading">
         <p class="eyebrow">Request List</p>
         <h2>希望人数リストの例</h2>
+        <p class="lead compact">
+          生徒から届いた希望を、時間と部屋ごとにまとめます。
+          先生はこのリストを見て、どの時間にどの部屋を開けるか考えられます。
+        </p>
       </div>
       <div class="table-wrap">
         <table>

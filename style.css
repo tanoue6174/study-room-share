@@ -324,6 +324,10 @@ p {
   cursor: default;
 }
 
+.feature-static-sample button {
+  cursor: default;
+}
+
 .app-intro {
   color: var(--muted);
 }

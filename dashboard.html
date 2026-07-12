@@ -2873,33 +2873,21 @@
         return { data: accounts, error: null };
       }
 
-      const [nameResult, loginResult] = await Promise.all([
-        appClient
-          .from("profiles")
-          .select("id, login_id, display_name, role")
-          .eq("role", "student")
-          .neq("id", currentUser.id)
-          .eq("display_name", query)
-          .order("display_name", { ascending: true }),
-        appClient
-          .from("profiles")
-          .select("id, login_id, display_name, role")
-          .eq("role", "student")
-          .neq("id", currentUser.id)
-          .eq("login_id", query)
-          .order("display_name", { ascending: true })
-      ]);
+      const { data, error } = await appClient
+        .from("profiles")
+        .select("id, login_id, display_name, role")
+        .eq("role", "student")
+        .neq("id", currentUser.id)
+        .order("display_name", { ascending: true });
 
-      if (nameResult.error || loginResult.error) {
-        return { data: [], error: nameResult.error || loginResult.error };
+      if (error) {
+        return { data: [], error };
       }
 
-      const profilesById = new Map();
-      [...(nameResult.data || []), ...(loginResult.data || [])].forEach((profile) => {
-        profilesById.set(profile.id, profile);
-      });
-
-      return { data: [...profilesById.values()], error: null };
+      return {
+        data: (data || []).filter((profile) => friendMatchesQuery(profile, query)),
+        error: null
+      };
     }
 
     async function handleFriendSearch(event) {

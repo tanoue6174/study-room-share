@@ -3345,6 +3345,9 @@
       ]);
       let hasVisibleReception = false;
       groupReceptionsByRoom(receptions).forEach(({ roomName, receptions: roomReceptions }) => {
+        const hasVotedForRoom = roomReceptions.some((reception) => votedIds.has(String(reception.id)));
+        if (hasVotedForRoom) return;
+
         const group = document.createElement("section");
         group.className = "reception-group";
         const title = document.createElement("h5");
@@ -3353,7 +3356,6 @@
         const list = document.createElement("div");
         list.className = "reception-result-list";
         groupReceptionsByDate(roomReceptions).forEach(({ receptionDate, receptions: dateReceptions }) => {
-          if (dateReceptions.some((reception) => votedIds.has(String(reception.id)))) return;
           hasVisibleReception = true;
           const row = document.createElement("div");
           row.className = "reception-result-row";
@@ -3363,6 +3365,7 @@
           voteButton.type = "button";
           voteButton.className = "button primary reception-vote-button";
           voteButton.dataset.receptionIds = dateReceptions.map((reception) => reception.id).join(",");
+          voteButton.dataset.roomReceptionIds = roomReceptions.map((reception) => reception.id).join(",");
           voteButton.textContent = "投票する";
           row.append(date, voteButton);
           list.appendChild(row);
@@ -3913,15 +3916,12 @@
       const button = event.target.closest(".reception-vote-button");
       if (!button || !currentUser) return;
       const receptionIds = String(button.dataset.receptionIds || "").split(",").filter(Boolean);
+      const roomReceptionIds = String(button.dataset.roomReceptionIds || "").split(",").filter(Boolean);
       if (!receptionIds.length) return;
       button.disabled = true;
-      rememberVotedReceptionIds(receptionIds);
-      const row = button.closest(".reception-result-row");
+      rememberVotedReceptionIds(roomReceptionIds.length ? roomReceptionIds : receptionIds);
       const group = button.closest(".reception-group");
-      row?.remove();
-      if (group && !group.querySelector(".reception-result-row")) {
-        group.remove();
-      }
+      group?.remove();
       if (!studentReceptionList.querySelector(".reception-group")) {
         studentReceptionList.innerHTML = '<p class="empty-rooms">いません</p>';
       }

@@ -2429,6 +2429,14 @@
           nameRow.appendChild(start);
         }
 
+        const durationLabel = formatStudyDuration(activeSession?.started_at);
+        if (durationLabel) {
+          const duration = document.createElement("span");
+          duration.className = "friend-study-duration";
+          duration.textContent = durationLabel;
+          nameRow.appendChild(duration);
+        }
+
         const meta = document.createElement("span");
         meta.textContent = "生徒";
         nameWrap.append(nameRow, meta);
@@ -2470,6 +2478,26 @@
       }
 
       return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    }
+
+    function formatStudyDuration(value) {
+      if (!value) {
+        return "";
+      }
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+
+      const totalMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours <= 0) {
+        return `${minutes}\u5206`;
+      }
+
+      return minutes ? `${hours}\u6642\u9593${minutes}\u5206` : `${hours}\u6642\u9593`;
     }
 
     function renderStudyStatus(session) {

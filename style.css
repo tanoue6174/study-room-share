@@ -1307,6 +1307,10 @@ p {
   color: #16833a;
 }
 
+.friend-item .friend-study-duration {
+  color: #16833a;
+}
+
 .friend-item span {
   margin-top: 3px;
   color: var(--muted);

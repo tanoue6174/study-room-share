@@ -696,6 +696,7 @@
     const LOCAL_REQUESTS_KEY = "study-room-share-local-requests";
     const LOCAL_RECEPTIONS_KEY = "study-room-share-local-receptions";
     const LOCAL_RECEPTION_VOTES_KEY = "study-room-share-local-reception-votes";
+    const VOTED_RECEPTION_IDS_KEY_PREFIX = "study-room-share-voted-reception-ids";
     const LOCAL_FRIENDS_KEY = "study-room-share-local-friends";
     const LOCAL_STUDY_SESSIONS_KEY = "study-room-share-local-study-sessions";
     const PLANNED_ROOMS_KEY = "study-room-share-planned-rooms";
@@ -1031,6 +1032,20 @@
 
     function saveLocalReceptionVotes(votes) {
       writeLocalJson(LOCAL_RECEPTION_VOTES_KEY, votes);
+    }
+
+    function votedReceptionIdsKey() {
+      return currentUser ? `${VOTED_RECEPTION_IDS_KEY_PREFIX}-${currentUser.id}` : VOTED_RECEPTION_IDS_KEY_PREFIX;
+    }
+
+    function getRememberedVotedReceptionIds() {
+      return new Set(readLocalJson(votedReceptionIdsKey(), []).map((id) => String(id)));
+    }
+
+    function rememberVotedReceptionIds(ids) {
+      const remembered = getRememberedVotedReceptionIds();
+      ids.forEach((id) => remembered.add(String(id)));
+      writeLocalJson(votedReceptionIdsKey(), Array.from(remembered));
     }
 
     function getLocalFriends() {
@@ -2615,18 +2630,22 @@
         return;
       }
 
-      await appClient
-        .from("study_sessions")
-        .delete()
-        .eq("active", false)
-        .lt("ended_at", resetDate);
+      try {
+        await appClient
+          .from("study_sessions")
+          .delete()
+          .eq("active", false)
+          .lt("ended_at", resetDate);
 
-      await appClient
-        .from("study_sessions")
-        .delete()
-        .eq("active", false)
-        .is("ended_at", null)
-        .lt("started_at", resetDate);
+        await appClient
+          .from("study_sessions")
+          .delete()
+          .eq("active", false)
+          .is("ended_at", null)
+          .lt("started_at", resetDate);
+      } catch (error) {
+        console.warn("古い自習データの削除をスキップしました。", error);
+      }
     }
 
     function renderStudyStatus(session) {
@@ -2760,6 +2779,20 @@
           created_at: friend.created_at
         };
       });
+
+      const uniqueFriends = new Map();
+      remoteFriends.forEach((friend) => {
+        const id = String(friend.id || "");
+        if (!id || id === String(currentUser.id)) {
+          return;
+        }
+
+        const existing = uniqueFriends.get(id);
+        if (!existing || (!existing.display_name && friend.display_name)) {
+          uniqueFriends.set(id, friend);
+        }
+      });
+      remoteFriends = Array.from(uniqueFriends.values());
 
       const friendIds = remoteFriends.map((friend) => friend.id).filter(Boolean);
       if (friendIds.length) {
@@ -3032,12 +3065,12 @@
         return;
       }
 
-      await loadRequests();
+      await runDashboardLoad("受付", loadRequests);
       if (displayRoleForAccount(currentProfile, currentUser) === "student") {
-        await loadFriends();
-        await loadStudySession();
+        await runDashboardLoad("友達", loadFriends);
+        await runDashboardLoad("自習中情報", loadStudySession);
       }
-      await loadRooms();
+      await runDashboardLoad("使える自習室", loadRooms);
     }
 
     async function refreshFriendListData() {
@@ -3050,13 +3083,21 @@
       }
       setFriendMessage("", "");
 
-      await loadFriends();
-      await loadRooms();
+      await runDashboardLoad("友達", loadFriends);
+      await runDashboardLoad("使える自習室", loadRooms);
 
       if (refreshFriends) {
         refreshFriends.disabled = false;
       }
       setFriendMessage("更新しました。", "success");
+    }
+
+    async function runDashboardLoad(label, loader) {
+      try {
+        await loader();
+      } catch (error) {
+        console.warn(`${label} の読み込みをスキップしました。`, error);
+      }
     }
 
     function finishLocalLogin(account, message) {
@@ -3237,7 +3278,10 @@
     function renderStudentReceptions(receptions, votes) {
       if (!studentReceptionList || !currentUser) return;
       studentReceptionList.innerHTML = "";
-      const votedIds = new Set(votes.filter((vote) => String(vote.student_id) === String(currentUser.id)).map((vote) => String(vote.reception_id)));
+      const votedIds = new Set([
+        ...votes.filter((vote) => String(vote.student_id) === String(currentUser.id)).map((vote) => String(vote.reception_id)),
+        ...getRememberedVotedReceptionIds()
+      ]);
       let hasVisibleReception = false;
       groupReceptionsByRoom(receptions).forEach(({ roomName, receptions: roomReceptions }) => {
         const group = document.createElement("section");
@@ -3810,6 +3854,7 @@
       const receptionIds = String(button.dataset.receptionIds || "").split(",").filter(Boolean);
       if (!receptionIds.length) return;
       button.disabled = true;
+      rememberVotedReceptionIds(receptionIds);
       const newVotes = receptionIds
         .filter((receptionId) => !currentReceptionVotes.some((vote) => (
           String(vote.reception_id) === String(receptionId)
@@ -4021,11 +4066,11 @@
       }
 
       renderLoggedIn(session.user, profile);
-      await loadRoomOptions();
-      await loadRequests();
-      await loadFriends();
-      await loadRooms();
-      await loadStudySession();
+      await runDashboardLoad("部屋設定", loadRoomOptions);
+      await runDashboardLoad("受付", loadRequests);
+      await runDashboardLoad("友達", loadFriends);
+      await runDashboardLoad("使える自習室", loadRooms);
+      await runDashboardLoad("自習中情報", loadStudySession);
       if (!isDashboardPage) {
         window.location.href = "dashboard.html";
       }

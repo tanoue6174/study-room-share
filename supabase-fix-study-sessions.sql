@@ -12,6 +12,7 @@ create table if not exists public.study_sessions (
 alter table public.study_sessions enable row level security;
 
 drop policy if exists "Students can read own study sessions" on public.study_sessions;
+drop policy if exists "Students can read friends active study sessions" on public.study_sessions;
 drop policy if exists "Students can create own study sessions" on public.study_sessions;
 drop policy if exists "Students can update own study sessions" on public.study_sessions;
 
@@ -20,6 +21,26 @@ on public.study_sessions
 for select
 to authenticated
 using (user_id = auth.uid());
+
+create policy "Students can read friends active study sessions"
+on public.study_sessions
+for select
+to authenticated
+using (
+  active = true
+  and exists (
+    select 1
+    from public.student_friends
+    where (
+      student_friends.user_id = auth.uid()
+      and student_friends.friend_id = study_sessions.user_id
+    )
+    or (
+      student_friends.friend_id = auth.uid()
+      and student_friends.user_id = study_sessions.user_id
+    )
+  )
+);
 
 create policy "Students can create own study sessions"
 on public.study_sessions

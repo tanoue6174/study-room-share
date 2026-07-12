@@ -2421,13 +2421,6 @@
         name.textContent = friendName;
         nameRow.appendChild(name);
 
-        const startTimeLabel = formatSessionStartTime(activeSession?.started_at);
-        if (startTimeLabel) {
-          const start = document.createElement("span");
-          start.className = "friend-study-start-time";
-          start.textContent = startTimeLabel;
-          nameRow.appendChild(start);
-        }
 
         const durationLabel = formatStudyDuration(activeSession?.started_at);
         if (durationLabel) {
@@ -2467,18 +2460,6 @@
       });
     }
 
-    function formatSessionStartTime(value) {
-      if (!value) {
-        return "";
-      }
-
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) {
-        return String(value).slice(0, 5);
-      }
-
-      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-    }
 
     function formatStudyDuration(value) {
       if (!value) {

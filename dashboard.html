@@ -1650,7 +1650,18 @@
 
     function updateRequestRoomOptions(rooms) {
       requestRoom.innerHTML = "";
-      const requestableRooms = rooms.filter((room) => room.accepts_requests !== false);
+      const roomNames = new Set();
+      const requestableRooms = rooms.filter((room) => {
+        if (room.accepts_requests === false) {
+          return false;
+        }
+        const roomName = String(room.room_name || "").trim();
+        if (!roomName || roomNames.has(roomName)) {
+          return false;
+        }
+        roomNames.add(roomName);
+        return true;
+      });
 
       if (!requestableRooms.length) {
         const option = document.createElement("option");

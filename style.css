@@ -1191,6 +1191,12 @@ p {
   background: #fbfdff;
 }
 
+.friend-item.is-studying {
+  border-color: #65c582;
+  background: #edfff2;
+  box-shadow: 0 6px 16px rgba(22, 131, 58, 0.14);
+}
+
 .friend-item strong,
 .friend-item span {
   display: block;
@@ -1236,9 +1242,18 @@ p {
   background: #f7fbff;
 }
 
+.friend-item.is-studying .friend-status-block {
+  border-color: #8bd9a4;
+  background: #ffffff;
+}
+
 .friend-study-status {
   margin-top: 0;
   color: #173b78;
+}
+
+.friend-item.is-studying .friend-study-status {
+  color: #16833a;
 }
 
 .friend-comment-preview {

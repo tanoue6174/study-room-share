@@ -701,6 +701,13 @@
     const LOCAL_FRIENDS_KEY = "study-room-share-local-friends";
     const LOCAL_STUDY_SESSIONS_KEY = "study-room-share-local-study-sessions";
     const PLANNED_ROOMS_KEY = "study-room-share-planned-rooms";
+    const SPECIAL_ROOM_OPTIONS = [
+      { room_name: "図書館", location: "校内" },
+      { room_name: "情報処理室", location: "校内" },
+      { room_name: "CAD室", location: "校内" },
+      { room_name: "電子工作室", location: "校内" },
+      { room_name: "実習工場", location: "校内" }
+    ];
     const ROLE_PASSWORDS = {
       student: ["stu", "dy", "2026"].join(""),
       teacher: ["tea", "ch", "2026"].join("")
@@ -1885,6 +1892,39 @@
       renderRoomOptionList(options);
     }
 
+    async function ensureSpecialRoomOptions(options) {
+      if (!currentUser || displayRoleForAccount(currentProfile, currentUser) !== "teacher") {
+        return false;
+      }
+
+      const ownOptions = options.filter((option) => String(option.created_by) === String(currentUser.id));
+      const ownNames = new Set(ownOptions.map((option) => String(option.room_name || "").trim()));
+      const missing = SPECIAL_ROOM_OPTIONS.filter((option) => !ownNames.has(option.room_name));
+      if (!missing.length) {
+        return false;
+      }
+
+      if (String(currentUser.id).startsWith("local-")) {
+        const nextOptions = [
+          ...getLocalRoomOptions(),
+          ...missing.map((option, index) => ({
+            id: Date.now() + index,
+            ...option,
+            accepts_requests: true,
+            created_by: currentUser.id,
+            created_at: new Date().toISOString()
+          }))
+        ];
+        saveLocalRoomOptions(nextOptions);
+        return true;
+      }
+
+      const { error } = await appClient.from("study_room_options").insert(
+        missing.map((option) => ({ ...option, accepts_requests: true, created_by: currentUser.id }))
+      );
+      return !error;
+    }
+
     async function loadRoomOptions() {
       if (!currentUser) {
         renderRoomOptions([]);
@@ -1893,6 +1933,9 @@
 
       if (String(currentUser.id).startsWith("local-")) {
         const options = getLocalRoomOptions();
+        if (await ensureSpecialRoomOptions(options)) {
+          return loadRoomOptions();
+        }
         renderRoomOptions(displayRoleForAccount(currentProfile, currentUser) === "teacher" ? options : []);
         updateRequestRoomOptions(options);
         return;
@@ -1925,6 +1968,9 @@
 
       setRoomOptionMessage("", "");
       const options = data || [];
+      if (await ensureSpecialRoomOptions(options)) {
+        return loadRoomOptions();
+      }
       const ownOptions = displayRoleForAccount(currentProfile, currentUser) === "teacher"
         ? options.filter((option) => option.created_by === currentUser.id)
         : [];

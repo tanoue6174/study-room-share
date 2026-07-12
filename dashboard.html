@@ -686,6 +686,7 @@
     let currentRequests = [];
     let currentReceptions = [];
     let currentReceptionVotes = [];
+    let hiddenVotedReceptionIds = new Set();
     let currentRoomPlans = [];
     let currentFriends = [];
     let currentStudySession = null;
@@ -1039,13 +1040,24 @@
     }
 
     function getRememberedVotedReceptionIds() {
-      return new Set(readLocalJson(votedReceptionIdsKey(), []).map((id) => String(id)));
+      return new Set([
+        ...hiddenVotedReceptionIds,
+        ...readLocalJson(votedReceptionIdsKey(), []).map((id) => String(id))
+      ]);
     }
 
     function rememberVotedReceptionIds(ids) {
       const remembered = getRememberedVotedReceptionIds();
-      ids.forEach((id) => remembered.add(String(id)));
-      writeLocalJson(votedReceptionIdsKey(), Array.from(remembered));
+      ids.forEach((id) => {
+        const receptionId = String(id);
+        hiddenVotedReceptionIds.add(receptionId);
+        remembered.add(receptionId);
+      });
+      try {
+        writeLocalJson(votedReceptionIdsKey(), Array.from(remembered));
+      } catch (_error) {
+        // The in-memory state still hides the vote during this session.
+      }
     }
 
     function getLocalFriends() {
@@ -2019,6 +2031,7 @@
       currentProfile = null;
       currentRoomPlans = [];
       currentFriends = [];
+      hiddenVotedReceptionIds = new Set();
       authStatus.textContent = "ログインしていません。";
       roleSummary.hidden = true;
       schoolBanner.hidden = true;
@@ -3843,6 +3856,15 @@
       if (!receptionIds.length) return;
       button.disabled = true;
       rememberVotedReceptionIds(receptionIds);
+      const row = button.closest(".reception-result-row");
+      const group = button.closest(".reception-group");
+      row?.remove();
+      if (group && !group.querySelector(".reception-result-row")) {
+        group.remove();
+      }
+      if (!studentReceptionList.querySelector(".reception-group")) {
+        studentReceptionList.innerHTML = '<p class="empty-rooms">いません</p>';
+      }
       const newVotes = receptionIds
         .filter((receptionId) => !currentReceptionVotes.some((vote) => (
           String(vote.reception_id) === String(receptionId)

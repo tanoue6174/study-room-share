@@ -284,7 +284,7 @@
         <form class="friend-search-form" id="friend-search-form">
           <label for="friend-search">名前で検索</label>
           <div class="friend-search-row">
-            <input id="friend-search" name="friend-search" type="search" maxlength="40" placeholder="友達の名前">
+            <input id="friend-search" name="friend-search-no-autofill" type="text" maxlength="40" placeholder="友達の名前" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <button class="button primary" id="friend-search-submit" type="submit">検索</button>
           </div>
           <p class="friend-message" id="friend-message" role="status" aria-live="polite"></p>
@@ -2234,7 +2234,7 @@
 
       const name = normalizeFriendSearchText(profile.display_name);
       const login = normalizeFriendSearchText(profile.login_id);
-      return name.includes(normalizedQuery) || login.includes(normalizedQuery);
+      return name === normalizedQuery || login === normalizedQuery;
     }
 
     function renderFriendResults(profiles, friendIds = new Set()) {
@@ -2553,13 +2553,33 @@
         return { data: accounts, error: null };
       }
 
-      return appClient
-        .from("profiles")
-        .select("id, login_id, display_name, role")
-        .eq("role", "student")
-        .neq("id", currentUser.id)
-        .or(`display_name.ilike.%${query}%,login_id.ilike.%${query}%`)
-        .order("display_name", { ascending: true });
+      const [nameResult, loginResult] = await Promise.all([
+        appClient
+          .from("profiles")
+          .select("id, login_id, display_name, role")
+          .eq("role", "student")
+          .neq("id", currentUser.id)
+          .eq("display_name", query)
+          .order("display_name", { ascending: true }),
+        appClient
+          .from("profiles")
+          .select("id, login_id, display_name, role")
+          .eq("role", "student")
+          .neq("id", currentUser.id)
+          .eq("login_id", query)
+          .order("display_name", { ascending: true })
+      ]);
+
+      if (nameResult.error || loginResult.error) {
+        return { data: [], error: nameResult.error || loginResult.error };
+      }
+
+      const profilesById = new Map();
+      [...(nameResult.data || []), ...(loginResult.data || [])].forEach((profile) => {
+        profilesById.set(profile.id, profile);
+      });
+
+      return { data: [...profilesById.values()], error: null };
     }
 
     async function handleFriendSearch(event) {
